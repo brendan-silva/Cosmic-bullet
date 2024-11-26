@@ -1,3 +1,4 @@
+from tkinter import font
 import pygame
 from pygame.locals import *
 from math import *
@@ -49,12 +50,16 @@ bullets = pygame.sprite.Group()
 
 t = 0
 ang = 0
+clock = pygame.time.Clock()
+fps = 60
 while running:
+	clock.tick()
 	t += 1
 	if t%50 == 0:
 		ang+=11
-		for i in range(0,360,30):
-			bullets.add(Bullet([1/2*width,1/4*height],[1,i+ang],[0.001,ang]))
+		for i in range(0,360,10):
+			bullets.add(Bullet([1/2*width,1/4*height],[1,i+ang],[0.000,ang]))
+
 
 	for event in pygame.event.get():
 		if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -62,9 +67,9 @@ while running:
 
 	keys = pygame.key.get_pressed()
 	if keys.count(True) == 2:
-		gSpd = 0.71
+		gSpd = 2
 	else:
-		gSpd = 1
+		gSpd = 3
 	if keys[K_w] and p1.rect.top > 0:
 		p1.y -= gSpd
 	if keys[K_s] and p1.rect.bottom < height:
@@ -80,7 +85,6 @@ while running:
     
 	for entity in bullets:
 		entity.move()
-
 		
 		
 		pygame.draw.rect(screen,RED,entity.rect)
@@ -88,6 +92,7 @@ while running:
 	p1.rect.y = p1.y
 	pygame.draw.rect(screen,WHITE,p1.rect)
 	pygame.display.update()
+	clock.tick(fps)
 
 pygame.quit()
 
