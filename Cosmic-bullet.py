@@ -3,40 +3,40 @@ import pygame
 from pygame.locals import *
 from math import *
 
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.rect = Rect(width/2,3/4*height,10,10)
+        self.rect = Rect(width / 2, 3 / 4 * height, 10, 10)
         self.x = self.rect.x
         self.y = self.rect.y
 
+
 class Bullet(pygame.sprite.Sprite):
-	def __init__(self,p,v,A):
-		super().__init__()
-		self.p=pygame.Vector2(p[0],p[1])
-		self.v=pygame.Vector2(v[0],0)
-		self.v=self.v.rotate(v[1])
-		self.A=pygame.Vector2(A[0],0)
-		self.A=self.A.rotate(A[1])
+    def __init__(self, p, v, A):
+        super().__init__()
+        self.p = pygame.Vector2(p[0], p[1])
+        self.v = pygame.Vector2(v[0], 0)
+        self.v = self.v.rotate(v[1])
+        self.A = pygame.Vector2(A[0], 0)
+        self.A = self.A.rotate(A[1])
 
-		self.rect = Rect(self.p.x,self.p.y,10,10)
-		self.t = 0
+        self.rect = Rect(self.p.x, self.p.y, 10, 10)
+        self.t = 0
 
+    def move(self):
+        self.t += 1
+        self.p += self.v
+        self.v += self.A
+        self.rect.y = self.p.y
+        self.rect.x = self.p.x
 
-
-
-	def move(self):
-		self.t += 1
-		self.p+=self.v
-		self.v+=self.A
-		self.rect.y = self.p.y
-		self.rect.x = self.p.x
 
 size = 1536, 864
 width, height = size
-BLACK = (50,50,50)
-WHITE = (255,255,255)
-RED = (255,0,0)
+BLACK = (50, 50, 50)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
 
 pygame.init()
 screen = pygame.display.set_mode(size)
@@ -45,7 +45,6 @@ gSpd = 1
 p1 = Player()
 
 bullets = pygame.sprite.Group()
-
 
 
 t = 0
@@ -94,5 +93,5 @@ while running:
 	pygame.display.update()
 	clock.tick(fps)
 
-pygame.quit()
 
+pygame.quit()
