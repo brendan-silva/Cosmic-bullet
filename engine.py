@@ -74,11 +74,12 @@ def main(loading: Scene):
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
+    game_loop = True
 
-    while True:
+    while game_loop:
         for event in pygame.event.get():
             if event.type == QUIT:
-                break
+                game_loop = False
         for game_object in loaded_scene.objects:
             game_object.update(delta_time)
 
