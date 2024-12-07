@@ -35,8 +35,11 @@ class Player(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = pygame.image.load("Sprites\Player.png")
         self.sprite.rect = Rect(5, 5, 10, 10)
         self.diagonal_modifier= sqrt(2)/2
+        self.shotcooldown=0
+        self.bulletimg = pygame.image.load("Sprites\Player Bullet 1.png")
 
     def update(self, dt):
         VELOCITY = 400
@@ -61,7 +64,6 @@ class Player(GameObject):
                     self.transform.pos.y += VELOCITY * dt 
             else:
                 self.transform.pos.y += VELOCITY * dt 
-
         elif pressed_keys[K_DOWN]:
             if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
                 if pressed_keys[K_LEFT]:
@@ -106,8 +108,9 @@ def render(game_object: GameObject, screen: pygame.Surface):
         width = sprite.rect.width
         height = sprite.rect.height
 
+
         rect = Rect(screen_pos.x + width / 2, screen_pos.y + height / 2, width, height)
-        pygame.draw.rect(screen, WHITE, rect)
+        screen.blit(game_object.sprite.image,rect)
 
 
 def spawn(game_object: GameObject):
