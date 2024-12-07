@@ -3,7 +3,7 @@ from pygame import Vector2
 from pygame import Rect
 from pygame.locals import *
 import pygame
-
+from math import *
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
@@ -31,7 +31,55 @@ class GameObject(metaclass=ABCMeta):
     def update(self, dt: float):
         pass
 
+class Player(GameObject):
+    def __init__(self):
+        self.transform = Transform2D(0, 0, 0)
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.rect = Rect(5, 5, 10, 10)
+        self.diagonal_modifier= sqrt(2)/2
 
+    def update(self, dt):
+        VELOCITY = 400
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[K_LSHIFT]:
+            VELOCITY = 200
+        if pressed_keys[K_UP]and pressed_keys[K_DOWN]:
+            if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
+                if pressed_keys[K_LEFT]:
+                    self.transform.pos.x += VELOCITY * dt
+                elif pressed_keys[K_RIGHT]:
+                    self.transform.pos.x -= VELOCITY * dt
+        elif pressed_keys[K_UP]:
+            if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
+                if pressed_keys[K_LEFT]:
+                    self.transform.pos.x += VELOCITY * dt *self.diagonal_modifier
+                    self.transform.pos.y += VELOCITY * dt *self.diagonal_modifier
+                elif pressed_keys[K_RIGHT]:
+                    self.transform.pos.x -= VELOCITY * dt *self.diagonal_modifier
+                    self.transform.pos.y += VELOCITY * dt *self.diagonal_modifier
+                else:
+                    self.transform.pos.y += VELOCITY * dt 
+            else:
+                self.transform.pos.y += VELOCITY * dt 
+
+        elif pressed_keys[K_DOWN]:
+            if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
+                if pressed_keys[K_LEFT]:
+                    self.transform.pos.x += VELOCITY * dt *self.diagonal_modifier
+                    self.transform.pos.y -= VELOCITY * dt *self.diagonal_modifier
+                elif pressed_keys[K_RIGHT]:
+                    self.transform.pos.x -= VELOCITY * dt *self.diagonal_modifier
+                    self.transform.pos.y -= VELOCITY * dt *self.diagonal_modifier
+                else:
+                    self.transform.pos.y -= VELOCITY * dt 
+            else:
+                self.transform.pos.y -= VELOCITY * dt
+        else:
+            if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
+                if pressed_keys[K_LEFT]:
+                    self.transform.pos.x += VELOCITY * dt
+                elif pressed_keys[K_RIGHT]:
+                    self.transform.pos.x -= VELOCITY * dt
 class Scene:
     objects: list[GameObject]
 
