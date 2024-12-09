@@ -12,6 +12,16 @@ loaded_scene = None
 
 
 class Transform2D:
+    """
+    Represents a position in any coordinate system.
+
+    Attributes
+    ----------
+    pos: Vector2
+        The x and y component of the position
+    rotation: float
+        The rotational component of the position
+    """
     pos: Vector2
     rotation: float
 
@@ -21,14 +31,49 @@ class Transform2D:
 
 
 class GameObject(metaclass=ABCMeta):
+    """
+    Represents any object in a game.
+
+    This class is a meta class meant to be inherited. This class represents a
+    generic game object. All methods on the class are abstract meaning they
+    have to be overrode.
+
+    Attributes
+    ----------
+    transform : Transform2D
+        The position of the game object in world coordinates
+    sprite: Sprite
+        The pygame sprite for the game object
+    """
     transform: Transform2D
     sprite: pygame.sprite.Sprite
 
     def __init__(self):
+        """
+        Construct a new instance of the game object class.
+
+        A constructor for the game object class. This constructor should be used
+        by all subclasses or it's functionally duplicated in the subclasses
+        constructor.
+        """
         self.transform = Transform2D()
 
     @abstractmethod
     def update(self, dt: float):
+        """
+        Call once a frame to allow game object to take actions.
+
+        This abstract method must be overrode by all subclasses. This is method
+        should be used to respond to user events, e.g. key presses or mouse
+        clicks.
+
+        Parameters
+        ----------
+        self : self
+            The game object this method is being called upon.
+        dt : float
+            The delta time since the last time this method was called.
+        """
         pass
 
 class Player(GameObject):
@@ -128,6 +173,7 @@ class Scene:
 
 
 def world_pos_to_screen_pos(pos: Vector2) -> Vector2:
+    """Convert a vector in world coordinates to pixel coordinates"""
     new_pos = Vector2(-pos.x, -pos.y)
     new_pos.x += WIDTH / 2
     new_pos.y += HEIGHT / 2
@@ -135,6 +181,7 @@ def world_pos_to_screen_pos(pos: Vector2) -> Vector2:
 
 
 def render(game_object: GameObject, screen: pygame.Surface):
+    """Render a game object to any surface"""
     if game_object.sprite is not None:
         world_pos = game_object.transform
         screen_pos = world_pos_to_screen_pos(world_pos.pos)
@@ -149,6 +196,7 @@ def render(game_object: GameObject, screen: pygame.Surface):
 
 
 def spawn(game_object: GameObject):
+    """Spawn a game object in the active scene"""
     loaded_scene.spawn(game_object)
 
 
