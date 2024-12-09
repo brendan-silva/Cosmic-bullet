@@ -91,7 +91,7 @@ class Player(GameObject):
                     self.transform.pos.x -= VELOCITY * dt
 
 class Player_bullet(GameObject):
-    def __init__(self,pos:Vector2,speed:float,ang:float,image):
+    def __init__(self,pos:Vector2,speed:float,ang:float,image:pygame.image):
         self.transform = Transform2D(pos.x,pos.y,ang)
         self.v = pygame.Vector2(0, speed)
         self.v = self.v.rotate(ang)
@@ -101,7 +101,21 @@ class Player_bullet(GameObject):
     
     def update(self, dt):
         self.transform.pos+=self.v*dt
-        
+
+class Bullet(GameObject):
+    def __init__(self, transformation: Transform2D,image: pygame.image,v:list[float,float],a:list[float,float]):
+        self.transform = transformation
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = image
+        self.v = pygame.Vector2(0, v[0])
+        self.v = self.v.rotate(v[1])
+        self.a = pygame.Vector2(0, a[0])
+        self.a = self.a.rotate(a[1])
+        self.sprite.rect = self.sprite.image.get_rect()
+
+    def update(self, dt):
+        self.transform.pos += self.v *dt
+        self.v += self.a *dt
 
 class Scene:
     objects: list[GameObject]

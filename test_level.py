@@ -9,27 +9,16 @@ class BulletSpawner(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = None
+        self.i=1
+        self.x=pygame.image.load("Sprites\Enemy Bullet 1.png")
 
     def update(self, dt):
         keys = pygame.key.get_pressed()
 
         if keys[K_SPACE]:
-            engine.spawn(Bullet(Transform2D(0, 0, 180)))
-            print("spawning")
-
-
-class Bullet(GameObject):
-    def __init__(self, transformation: Transform2D):
-        self.transform = transformation
-
-        self.sprite = pygame.sprite.Sprite()
-        self.sprite.rect = Rect(0, 0, 10, 10)
-
-    def update(self, dt):
-        VELOCITY = 200
-
-        self.transform.pos.x += VELOCITY * dt
-        self.transform.pos.y += VELOCITY * dt
+            self.i+=1
+            engine.spawn(Bullet(self.transform,self.x,[100,self.i],[1,self.i*17]))
+            
 
 
 def scene() -> Scene:
