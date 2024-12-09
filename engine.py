@@ -35,14 +35,24 @@ class Player(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = pygame.sprite.Sprite()
-        self.sprite.rect = Rect(5, 5, 10, 10)
+        self.sprite.image = pygame.image.load("Sprites\Player.png")
+        self.sprite.rect = self.sprite.image.get_rect(center=(0,0))
         self.diagonal_modifier= sqrt(2)/2
+        self.shotcooldown=0
+        self.bulletimg = pygame.image.load("Sprites\Player Bullet 1.png")
+        self.cent=pygame.Vector2(self.sprite.rect.width-6,self.sprite.rect.height/3)
 
     def update(self, dt):
         VELOCITY = 400
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LSHIFT]:
             VELOCITY = 200
+        if  self.shotcooldown >=0:
+            self.shotcooldown-=dt
+        if pressed_keys[K_z]and self.shotcooldown <=0:
+            for i in range(-5,6):
+                spawn(Player_bullet(self.transform.pos-self.cent,600,5*i,self.bulletimg))
+                self.shotcooldown+=0.02
         if pressed_keys[K_UP]and pressed_keys[K_DOWN]:
             if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
                 if pressed_keys[K_LEFT]:
@@ -61,7 +71,6 @@ class Player(GameObject):
                     self.transform.pos.y += VELOCITY * dt 
             else:
                 self.transform.pos.y += VELOCITY * dt 
-
         elif pressed_keys[K_DOWN]:
             if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
                 if pressed_keys[K_LEFT]:
@@ -80,6 +89,20 @@ class Player(GameObject):
                     self.transform.pos.x += VELOCITY * dt
                 elif pressed_keys[K_RIGHT]:
                     self.transform.pos.x -= VELOCITY * dt
+
+class Player_bullet(GameObject):
+    def __init__(self,pos:Vector2,speed:float,ang:float,image):
+        self.transform = Transform2D(pos.x,pos.y,ang)
+        self.v = pygame.Vector2(0, speed)
+        self.v = self.v.rotate(ang)
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = image
+        self.sprite.rect = self.sprite.image.get_rect()
+    
+    def update(self, dt):
+        self.transform.pos+=self.v*dt
+        
+
 class Scene:
     objects: list[GameObject]
 
@@ -106,8 +129,9 @@ def render(game_object: GameObject, screen: pygame.Surface):
         width = sprite.rect.width
         height = sprite.rect.height
 
+
         rect = Rect(screen_pos.x + width / 2, screen_pos.y + height / 2, width, height)
-        pygame.draw.rect(screen, WHITE, rect)
+        screen.blit(pygame.transform.rotate(game_object.sprite.image,-game_object.transform.rotation),rect)
 
 
 def spawn(game_object: GameObject):
