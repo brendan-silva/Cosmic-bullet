@@ -85,7 +85,7 @@ class Player(GameObject):
         self.diagonal_modifier= sqrt(2)/2
         self.shotcooldown=0
         self.bulletimg = pygame.image.load("Sprites\Player Bullet 1.png")
-        self.cent=pygame.Vector2(self.sprite.rect.width-6,self.sprite.rect.height/3)
+        self.cent=pygame.Vector2(self.sprite.rect.width-self.bulletimg.get_rect().width-4,(self.sprite.rect.height/3)-self.bulletimg.get_rect().height)
 
     def update(self, dt):
         VELOCITY = 400
@@ -97,7 +97,7 @@ class Player(GameObject):
         if pressed_keys[K_z]and self.shotcooldown <=0:
             for i in range(-5,6):
                 spawn(Player_bullet(self.transform.pos-self.cent,600,5*i,self.bulletimg))
-                self.shotcooldown+=0.02
+            self.shotcooldown+=0.2
         if pressed_keys[K_UP]and pressed_keys[K_DOWN]:
             if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
                 if pressed_keys[K_LEFT]:

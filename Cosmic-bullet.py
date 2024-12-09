@@ -18,7 +18,7 @@ class Bullet(pygame.sprite.Sprite):
         self.p = pygame.Vector2(p[0], p[1])
         self.v = pygame.Vector2(v[0], 0)
         self.v = self.v.rotate(v[1])
-        self.A = pygame.Vector2(A[0], 0)
+        self.A = pygame.Vector2(A[0], )
         self.A = self.A.rotate(A[1])
 
         self.rect = Rect(self.p.x, self.p.y, 10, 10)
