@@ -4,7 +4,7 @@ from pygame import Rect
 from pygame.locals import *
 import pygame
 from math import *
-
+Playermove = Vector2(0, 0)
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
@@ -96,11 +96,15 @@ class Player(GameObject):
         self.diagonal_modifier = sqrt(2) / 2
         self.shotcooldown = 0
         self.bulletimg = pygame.image.load("Sprites\Player Bullet 1.png")
+        self.Laserimg = pygame.image.load("Sprites\Player Laser.png")
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
+        self.shottype = 0
+        self.xhold = False
 
     def update(self, dt):
+        global Playermove
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
@@ -120,35 +124,59 @@ class Player(GameObject):
         elif not self.vx == 0:
             self.v = self.v.rotate(self.vx * 90)
         else:
-            self.v = Vector2(0, 0)
+            self.v = Vector2(0, 0) 
+        Playermove = self.v
         self.transform.pos += self.v * dt
         if self.shotcooldown >= 0:
             self.shotcooldown -= dt
-        if pressed_keys[K_z] and self.shotcooldown <= 0:
+        if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 0:
             for i in range(-5, 6):
                 spawn(
                     Player_bullet(
-                        self.transform.pos - Vector2(-4, -20),
+                        self.transform.pos + Vector2(4, 20),
                         600,
                         5 * i,
                         self.bulletimg,
                     )
                 )
             self.shotcooldown += 0.2
+        if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 1:
+            
+            spawn(
+                Player_laser(
+                    self.transform.pos + Vector2(0, 20)-Playermove * dt,
+                    600,
+                    0,
+                    self.Laserimg,
+                    )
+                )
+            self.shotcooldown += 0.04
+        if pressed_keys[K_x]:
+            if not self.xhold:
+                self.shottype += 1
+                if self.shottype > 2:
+                    self.shottype = 0
+            self.xhold = True
+        else:
+            self.xhold=False
 
 
 class Player_bullet(GameObject):
-    def __init__(self, pos: Vector2, speed: float, ang: float, image: pygame.image):
+    def __init__(self, pos: Vector2, speed: float, ang: float, image: pygame.image,dmg:float=0):
         self.transform = Transform2D(pos.x, pos.y, ang)
         self.v = pygame.Vector2(0, speed)
         self.v = self.v.rotate(ang)
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = image
         self.sprite.rect = self.sprite.image.get_rect()
+        self.dmg=dmg
 
     def update(self, dt):
         self.transform.pos += self.v * dt
-
+class Player_laser(Player_bullet):
+    def update(self, dt):
+        global Playermove
+        self.transform.pos += self.v * dt + Playermove * dt
 
 class Bullet(GameObject):
     def __init__(
