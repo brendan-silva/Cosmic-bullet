@@ -4,6 +4,7 @@ from pygame import Rect
 from pygame.locals import *
 import pygame
 from math import *
+
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
@@ -22,15 +23,20 @@ class Transform2D:
     rotation: float
         The rotational component of the position
     """
+
     pos: Vector2
     rotation: float
 
     def __init__(self, x: float, y: float, theta: float):
         self.pos = Vector2(x, y)
         self.rotation = theta
-    def __add__(self, other):
-        return Transform2D(self.pos.x+other.pos.x,self.pos.y+other.pos.y,self.rotation+other.rotation)
 
+    def __add__(self, other):
+        return Transform2D(
+            self.pos.x + other.pos.x,
+            self.pos.y + other.pos.y,
+            self.rotation + other.rotation,
+        )
 
 
 class GameObject(metaclass=ABCMeta):
@@ -48,6 +54,7 @@ class GameObject(metaclass=ABCMeta):
     sprite: Sprite
         The pygame sprite for the game object
     """
+
     transform: Transform2D
     sprite: pygame.sprite.Sprite
 
@@ -79,14 +86,15 @@ class GameObject(metaclass=ABCMeta):
         """
         pass
 
+
 class Player(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.image.load("Sprites\Player.png")
-        self.sprite.rect = self.sprite.image.get_rect(center=(0,0))
-        self.diagonal_modifier= sqrt(2)/2
-        self.shotcooldown=0
+        self.sprite.rect = self.sprite.image.get_rect(center=(0, 0))
+        self.diagonal_modifier = sqrt(2) / 2
+        self.shotcooldown = 0
         self.bulletimg = pygame.image.load("Sprites\Player Bullet 1.png")
         self.v=Vector2(0,400)
         self.vy=0
@@ -120,20 +128,28 @@ class Player(GameObject):
                 spawn(Player_bullet(self.transform.pos-Vector2(-4,-20),600,5*i,self.bulletimg))
             self.shotcooldown+=0.2
 
+
 class Player_bullet(GameObject):
-    def __init__(self,pos:Vector2,speed:float,ang:float,image:pygame.image):
-        self.transform = Transform2D(pos.x,pos.y,ang)
+    def __init__(self, pos: Vector2, speed: float, ang: float, image: pygame.image):
+        self.transform = Transform2D(pos.x, pos.y, ang)
         self.v = pygame.Vector2(0, speed)
         self.v = self.v.rotate(ang)
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = image
         self.sprite.rect = self.sprite.image.get_rect()
-    
+
     def update(self, dt):
-        self.transform.pos+=self.v*dt
+        self.transform.pos += self.v * dt
+
 
 class Bullet(GameObject):
-    def __init__(self, transformation: Transform2D,image: pygame.image,v:list[float,float],a:list[float,float]):
+    def __init__(
+        self,
+        transformation: Transform2D,
+        image: pygame.image,
+        v: list[float, float],
+        a: list[float, float],
+    ):
         self.transform = transformation
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = image
@@ -144,39 +160,80 @@ class Bullet(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
 
     def update(self, dt):
-        self.transform.pos += self.v *dt
-        self.v += self.a *dt
+        self.transform.pos += self.v * dt
+        self.v += self.a * dt
 
-class shotdata():
-    def __init__(self, transformation: Transform2D,image: pygame.image,v:list[float,float]=[0,0],a:list[float,float]=[0,0],BulletsPerBurst:int=1,shottime:float=1,timeoffset:float=0,Burstchange:list[float,float,float,float]=[0,0,0,0],incrementchange:list[float,float,float,float]=[0,0,0,0],incrementcap:int=-1):
+
+class shotdata:
+    def __init__(
+        self,
+        transformation: Transform2D,
+        image: pygame.image,
+        v: list[float, float] = [0, 0],
+        a: list[float, float] = [0, 0],
+        BulletsPerBurst: int = 1,
+        shottime: float = 1,
+        timeoffset: float = 0,
+        Burstchange: list[float, float, float, float] = [0, 0, 0, 0],
+        incrementchange: list[float, float, float, float] = [0, 0, 0, 0],
+        incrementcap:int=-1
+    ):
         self.transform = transformation
         self.image = image
         self.v = v
         self.a = a
         self.repeat = BulletsPerBurst
         self.shotrate = shottime
-        self.repeatchange=Burstchange
-        self.incrementchange=incrementchange
-        self.shotcooldown=timeoffset
-        self.i=0
-        self.incrementcap=incrementcap
+        self.repeatchange = Burstchange
+        self.incrementchange = incrementchange
+        self.shotcooldown = timeoffset
+        self.i = 0
+        self.incrementcap = incrementcap
 
-    
-    def update(self, dt,Transform2D:Transform2D):
-        if  self.shotcooldown >=0:
-            self.shotcooldown-=dt
-        if  self.shotcooldown <=0:
-            for x in range(0,self.repeat):
-                spawn(Bullet(Transform2D+self.transform,self.image,[self.v[0]+x*self.repeatchange[0]+self.i*self.incrementchange[0],self.v[1]+x*self.repeatchange[1]+self.i*self.incrementchange[1]],[self.a[0]+x*self.repeatchange[2]+self.i*self.incrementchange[2],self.a[1]+x*self.repeatchange[3]+self.i*self.incrementchange[3]]))
-            self.shotcooldown+=self.shotrate
-            self.i+=1
+    def update(self, dt, Transform2D: Transform2D):
+        if self.shotcooldown >= 0:
+            self.shotcooldown -= dt
+        if self.shotcooldown <= 0:
+            for x in range(0, self.repeat):
+                spawn(
+                    Bullet(
+                        Transform2D + self.transform,
+                        self.image,
+                        [
+                            self.v[0]
+                            + x * self.repeatchange[0]
+                            + self.i * self.incrementchange[0],
+                            self.v[1]
+                            + x * self.repeatchange[1]
+                            + self.i * self.incrementchange[1],
+                        ],
+                        [
+                            self.a[0]
+                            + x * self.repeatchange[2]
+                            + self.i * self.incrementchange[2],
+                            self.a[1]
+                            + x * self.repeatchange[3]
+                            + self.i * self.incrementchange[3],
+                        ],
+                    )
+                )
+            self.shotcooldown += self.shotrate
+            self.i += 1
             if self.i == self.incrementcap:
-                self.i=0
+                self.i = 0
             
 
 
 class enemy(GameObject):
-    def __init__(self, transformation: Transform2D,image: pygame.image,v:list[float,float]=[0,0],a:list[float,float]=[0,0],hp:float=1,shotdata:list[shotdata]=None):
+    def __init__(
+        self,
+        transformation: Transform2D,
+        image: pygame.image,
+        v: list[float, float] = [0, 0],
+        a: list[float, float] = [0, 0],
+        hp: float = 1,
+        shotdata: list[shotdata] = None,
+    ):
         self.transform = transformation
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = image
@@ -185,14 +242,14 @@ class enemy(GameObject):
         self.a = pygame.Vector2(0, a[0])
         self.a = self.a.rotate(a[1])
         self.sprite.rect = self.sprite.image.get_rect()
-        self.shotdata =shotdata
+        self.shotdata = shotdata
         self.hp = hp
 
     def update(self, dt):
-        self.transform.pos += self.v *dt
-        self.v += self.a *dt
+        self.transform.pos += self.v * dt
+        self.v += self.a * dt
         for x in self.shotdata:
-            x.update(dt,self.transform)
+            x.update(dt, self.transform)
 
 
 class Scene:
@@ -223,9 +280,13 @@ def render(game_object: GameObject, screen: pygame.Surface):
         width = sprite.rect.width
         height = sprite.rect.height
 
-
         rect = Rect(screen_pos.x - width / 2, screen_pos.y - height / 2, width, height)
-        screen.blit(pygame.transform.rotate(game_object.sprite.image,-game_object.transform.rotation),rect)
+        screen.blit(
+            pygame.transform.rotate(
+                game_object.sprite.image, -game_object.transform.rotation
+            ),
+            rect,
+        )
 
 
 def spawn(game_object: GameObject):
