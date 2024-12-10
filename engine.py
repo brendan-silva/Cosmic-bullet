@@ -28,6 +28,9 @@ class Transform2D:
     def __init__(self, x: float, y: float, theta: float):
         self.pos = Vector2(x, y)
         self.rotation = theta
+    def __add__(self, other):
+        return Transform2D(self.pos.x+other.pos.x,self.pos.y+other.pos.y,self.rotation+other.rotation)
+
 
 
 class GameObject(metaclass=ABCMeta):
@@ -85,8 +88,6 @@ class Player(GameObject):
         self.diagonal_modifier= sqrt(2)/2
         self.shotcooldown=0
         self.bulletimg = pygame.image.load("Sprites\Player Bullet 1.png")
-        self.cent=pygame.Vector2(self.sprite.rect.width-self.bulletimg.get_rect().width-4,(self.sprite.rect.height/3)-self.bulletimg.get_rect().height)
-
     def update(self, dt):
         VELOCITY = 400
         pressed_keys = pygame.key.get_pressed()
@@ -96,7 +97,7 @@ class Player(GameObject):
             self.shotcooldown-=dt
         if pressed_keys[K_z]and self.shotcooldown <=0:
             for i in range(-5,6):
-                spawn(Player_bullet(self.transform.pos-self.cent,600,5*i,self.bulletimg))
+                spawn(Player_bullet(self.transform.pos-Vector2(-4,-20),600,5*i,self.bulletimg))
             self.shotcooldown+=0.2
         if pressed_keys[K_UP]and pressed_keys[K_DOWN]:
             if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
@@ -162,6 +163,50 @@ class Bullet(GameObject):
         self.transform.pos += self.v *dt
         self.v += self.a *dt
 
+class shotdata():
+    def __init__(self, transformation: Transform2D,image: pygame.image,v:list[float,float]=[0,0],a:list[float,float]=[0,0],BulletsPerBurst:int=1,shottime:float=1,timeoffset:float=0,Burstchange:list[float,float,float,float]=[0,0,0,0],incrementchange:list[float,float,float,float]=[0,0,0,0]):
+        self.transform = transformation
+        self.image = image
+        self.v = v
+        self.a = a
+        self.repeat = BulletsPerBurst
+        self.shotrate = shottime
+        self.repeatchange=Burstchange
+        self.incrementchange=incrementchange
+        self.shotcooldown=timeoffset
+        self.i=0
+
+    
+    def update(self, dt,Transform2D:Transform2D):
+        if  self.shotcooldown >=0:
+            self.shotcooldown-=dt
+        if  self.shotcooldown <=0:
+            for x in range(0,self.repeat):
+                spawn(Bullet(Transform2D+self.transform,self.image,[self.v[0]+x*self.repeatchange[0]+self.i*self.incrementchange[0],self.v[1]+x*self.repeatchange[1]+self.i*self.incrementchange[1]],[self.a[0]+x*self.repeatchange[2]+self.i*self.incrementchange[2],self.a[1]+x*self.repeatchange[3]+self.i*self.incrementchange[3]]))
+            self.shotcooldown+=self.shotrate
+            self.i+=1
+
+
+class enemy(GameObject):
+    def __init__(self, transformation: Transform2D,image: pygame.image,v:list[float,float]=[0,0],a:list[float,float]=[0,0],hp:float=1,shotdata:list[shotdata]=None):
+        self.transform = transformation
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = image
+        self.v = pygame.Vector2(0, v[0])
+        self.v = self.v.rotate(v[1])
+        self.a = pygame.Vector2(0, a[0])
+        self.a = self.a.rotate(a[1])
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.shotdata =shotdata
+        self.hp = hp
+
+    def update(self, dt):
+        self.transform.pos += self.v *dt
+        self.v += self.a *dt
+        for x in self.shotdata:
+            x.update(dt,self.transform)
+
+
 class Scene:
     objects: list[GameObject]
 
@@ -191,7 +236,7 @@ def render(game_object: GameObject, screen: pygame.Surface):
         height = sprite.rect.height
 
 
-        rect = Rect(screen_pos.x + width / 2, screen_pos.y + height / 2, width, height)
+        rect = Rect(screen_pos.x - width / 2, screen_pos.y - height / 2, width, height)
         screen.blit(pygame.transform.rotate(game_object.sprite.image,-game_object.transform.rotation),rect)
 
 
