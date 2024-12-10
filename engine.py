@@ -91,12 +91,12 @@ class Player(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = pygame.sprite.Sprite()
-        self.sprite.image = pygame.image.load("Sprites\Player.png")
+        self.sprite.image = pygame.image.load("Cosmic-bullet\Sprites\Player.png")
         self.sprite.rect = self.sprite.image.get_rect(center=(0, 0))
         self.diagonal_modifier = sqrt(2) / 2
         self.shotcooldown = 0
-        self.bulletimg = pygame.image.load("Sprites\Player Bullet 1.png")
-        self.Laserimg = pygame.image.load("Sprites\Player Laser.png")
+        self.bulletimg = pygame.image.load("Cosmic-bullet\Sprites\Player Bullet 1.png")
+        self.Laserimg = pygame.image.load("Cosmic-bullet\Sprites\Player Laser.png")
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
@@ -225,6 +225,7 @@ class shotdata:
         self.shotcooldown = timeoffset
         self.i = 0
         self.incrementcap = incrementcap
+        self.hit=
 
     def update(self, dt, Transform2D: Transform2D):
         if self.shotcooldown >= 0:

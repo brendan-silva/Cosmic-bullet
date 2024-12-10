@@ -11,7 +11,7 @@ class BulletSpawner(GameObject):
         self.sprite = None
         self.shotcooldown = 0
         self.i = 1
-        self.x = pygame.image.load("Sprites\Enemy Bullet 1.png")
+        self.x = pygame.image.load("Cosmic-bullet\Sprites\Enemy Bullet 1.png")
 
     def update(self, dt):
         if self.shotcooldown >= 0:
@@ -37,14 +37,14 @@ def scene() -> Scene:
         Player(),
         enemy(
             Transform2D(0, 300, 0),
-            pygame.image.load("Sprites\Enemy.png"),
+            pygame.image.load("Cosmic-bullet\Sprites\Enemy.png"),
             [100, 135],
             [10, -60],
             1,
             [
                 shotdata(
                     Transform2D(0, 0, 0),
-                    pygame.image.load("Sprites\Enemy Bullet 1.png"),
+                    pygame.image.load("Cosmic-bullet\Sprites\Enemy Bullet 1.png"),
                     [10, 0],
                     [100, 0],
                     12,
