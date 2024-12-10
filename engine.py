@@ -88,53 +88,37 @@ class Player(GameObject):
         self.diagonal_modifier= sqrt(2)/2
         self.shotcooldown=0
         self.bulletimg = pygame.image.load("Sprites\Player Bullet 1.png")
+        self.v=Vector2(0,400)
+        self.vy=0
+        self.vx=0
     def update(self, dt):
-        VELOCITY = 400
+        self.v= Vector2(0,400)
+        self.vy=0
+        self.vx=0
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LSHIFT]:
-            VELOCITY = 200
+            self.v=self.v/2
+        if pressed_keys[K_UP]:
+            self.vy+=1
+        if pressed_keys[K_DOWN]:
+            self.vy-=1
+        if pressed_keys[K_LEFT]:
+            self.vx-=1
+        if pressed_keys[K_RIGHT]:
+            self.vx+=1
+        if not self.vy==0:
+            self.v=self.v.rotate(90-self.vy*90+self.vx*self.vy*45)
+        elif not self.vx==0:
+            self.v=self.v.rotate(self.vx*90)
+        else:
+            self.v=Vector2(0,0)
+        self.transform.pos+=self.v*dt
         if  self.shotcooldown >=0:
             self.shotcooldown-=dt
         if pressed_keys[K_z]and self.shotcooldown <=0:
             for i in range(-5,6):
                 spawn(Player_bullet(self.transform.pos-Vector2(-4,-20),600,5*i,self.bulletimg))
             self.shotcooldown+=0.2
-        if pressed_keys[K_UP]and pressed_keys[K_DOWN]:
-            if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
-                if pressed_keys[K_LEFT]:
-                    self.transform.pos.x += VELOCITY * dt
-                elif pressed_keys[K_RIGHT]:
-                    self.transform.pos.x -= VELOCITY * dt
-        elif pressed_keys[K_UP]:
-            if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
-                if pressed_keys[K_LEFT]:
-                    self.transform.pos.x += VELOCITY * dt *self.diagonal_modifier
-                    self.transform.pos.y += VELOCITY * dt *self.diagonal_modifier
-                elif pressed_keys[K_RIGHT]:
-                    self.transform.pos.x -= VELOCITY * dt *self.diagonal_modifier
-                    self.transform.pos.y += VELOCITY * dt *self.diagonal_modifier
-                else:
-                    self.transform.pos.y += VELOCITY * dt 
-            else:
-                self.transform.pos.y += VELOCITY * dt 
-        elif pressed_keys[K_DOWN]:
-            if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
-                if pressed_keys[K_LEFT]:
-                    self.transform.pos.x += VELOCITY * dt *self.diagonal_modifier
-                    self.transform.pos.y -= VELOCITY * dt *self.diagonal_modifier
-                elif pressed_keys[K_RIGHT]:
-                    self.transform.pos.x -= VELOCITY * dt *self.diagonal_modifier
-                    self.transform.pos.y -= VELOCITY * dt *self.diagonal_modifier
-                else:
-                    self.transform.pos.y -= VELOCITY * dt 
-            else:
-                self.transform.pos.y -= VELOCITY * dt
-        else:
-            if  not (pressed_keys[K_LEFT] and pressed_keys[K_RIGHT]):
-                if pressed_keys[K_LEFT]:
-                    self.transform.pos.x += VELOCITY * dt
-                elif pressed_keys[K_RIGHT]:
-                    self.transform.pos.x -= VELOCITY * dt
 
 class Player_bullet(GameObject):
     def __init__(self,pos:Vector2,speed:float,ang:float,image:pygame.image):
@@ -164,7 +148,7 @@ class Bullet(GameObject):
         self.v += self.a *dt
 
 class shotdata():
-    def __init__(self, transformation: Transform2D,image: pygame.image,v:list[float,float]=[0,0],a:list[float,float]=[0,0],BulletsPerBurst:int=1,shottime:float=1,timeoffset:float=0,Burstchange:list[float,float,float,float]=[0,0,0,0],incrementchange:list[float,float,float,float]=[0,0,0,0]):
+    def __init__(self, transformation: Transform2D,image: pygame.image,v:list[float,float]=[0,0],a:list[float,float]=[0,0],BulletsPerBurst:int=1,shottime:float=1,timeoffset:float=0,Burstchange:list[float,float,float,float]=[0,0,0,0],incrementchange:list[float,float,float,float]=[0,0,0,0],incrementcap:int=-1):
         self.transform = transformation
         self.image = image
         self.v = v
@@ -175,6 +159,7 @@ class shotdata():
         self.incrementchange=incrementchange
         self.shotcooldown=timeoffset
         self.i=0
+        self.incrementcap=incrementcap
 
     
     def update(self, dt,Transform2D:Transform2D):
@@ -185,6 +170,9 @@ class shotdata():
                 spawn(Bullet(Transform2D+self.transform,self.image,[self.v[0]+x*self.repeatchange[0]+self.i*self.incrementchange[0],self.v[1]+x*self.repeatchange[1]+self.i*self.incrementchange[1]],[self.a[0]+x*self.repeatchange[2]+self.i*self.incrementchange[2],self.a[1]+x*self.repeatchange[3]+self.i*self.incrementchange[3]]))
             self.shotcooldown+=self.shotrate
             self.i+=1
+            if self.i == self.incrementcap:
+                self.i=0
+            
 
 
 class enemy(GameObject):
