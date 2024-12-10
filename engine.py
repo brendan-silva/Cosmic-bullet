@@ -141,16 +141,16 @@ class Player(GameObject):
                 )
             self.shotcooldown += 0.2
         if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 1:
-            
-            spawn(
-                Player_laser(
-                    self.transform.pos + Vector2(0, 20)-Playermove * dt,
-                    600,
-                    0,
-                    self.Laserimg,
-                    )
+            for i in range(0, 4):
+                spawn(
+                    Player_laser(
+                        self.transform.pos + Vector2(0, 30+15*i)-Playermove * dt,
+                        590,
+                        0,
+                        self.Laserimg,
+                        )
                 )
-            self.shotcooldown += 0.04
+            self.shotcooldown += 0.1
         if pressed_keys[K_x]:
             if not self.xhold:
                 self.shottype += 1
