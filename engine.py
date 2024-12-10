@@ -225,7 +225,7 @@ class shotdata:
         self.shotcooldown = timeoffset
         self.i = 0
         self.incrementcap = incrementcap
-        self.hit=
+
 
     def update(self, dt, Transform2D: Transform2D):
         if self.shotcooldown >= 0:
