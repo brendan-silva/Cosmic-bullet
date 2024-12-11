@@ -3,7 +3,7 @@ from pygame import Vector2
 from pygame import Rect
 from pygame.locals import *
 import pygame
-from math import *
+import math 
 Playermove = Vector2(0, 0)
 WIDTH = 1536
 HEIGHT = 864
@@ -87,23 +87,32 @@ class GameObject(metaclass=ABCMeta):
         pass
 
 
+
+
+
 class Player(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.image.load("Cosmic-bullet\Sprites\Player.png")
         self.sprite.rect = self.sprite.image.get_rect(center=(0, 0))
-        self.diagonal_modifier = sqrt(2) / 2
+        self.diagonal_modifier = math.sqrt(2) / 2
         self.shotcooldown = 0
         self.bulletimg = pygame.image.load("Cosmic-bullet\Sprites\Player Bullet 1.png")
-        self.Laserimg = pygame.image.load("Cosmic-bullet\Sprites\Player Laser.png")
+        self.Laserimg = pygame.image.load("Cosmic-bullet\Sprites\Large Player Laser.png")
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
         self.shottype = 0
         self.xhold = False
+        self.hp = 3
+        self.hitcooldown=0
 
     def update(self, dt):
+        if self.hitcooldown >= 0:
+            self.hitcooldown -= dt
+            if self.hitcooldown <= 0:
+                self.sprite.image = pygame.image.load("Cosmic-bullet\Sprites\Player.png")
         global Playermove
         self.v = Vector2(0, 400)
         self.vy = 0
@@ -159,7 +168,12 @@ class Player(GameObject):
             self.xhold = True
         else:
             self.xhold=False
-
+    def checkifhit(self,Bull:GameObject):
+        distance=math.sqrt(abs(self.transform.pos.x-Bull.transform.pos.x)+abs(self.transform.pos.y-Bull.transform.pos.y))
+        if distance <= math.sqrt(4+Bull.Bullethit):
+            self.hp -= 1
+            self.sprite.image = pygame.image.load("Cosmic-bullet\Sprites\Player hit.png")
+            self.hitcooldown = 1
 
 class Player_bullet(GameObject):
     def __init__(self, pos: Vector2, speed: float, ang: float, image: pygame.image,dmg:float=0):
@@ -194,6 +208,10 @@ class Bullet(GameObject):
         self.a = pygame.Vector2(0, a[0])
         self.a = self.a.rotate(a[1])
         self.sprite.rect = self.sprite.image.get_rect()
+        if self.sprite.rect.width<self.sprite.rect.height:
+            self.Bullethit=self.sprite.rect.width*0.8
+        else:
+            self.Bullethit=self.sprite.rect.height*0.8
 
     def update(self, dt):
         self.transform.pos += self.v * dt
@@ -280,6 +298,7 @@ class enemy(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.shotdata = shotdata
         self.hp = hp
+        
 
     def update(self, dt):
         self.transform.pos += self.v * dt
@@ -349,9 +368,16 @@ def main(loading: Scene):
 
         for game_object in loaded_scene.objects:
             render(game_object, screen)
+        for game_object in loaded_scene.objects:
+            if isinstance(game_object,Player):
+                if game_object.hitcooldown<=0:
+                    for game_object2 in loaded_scene.objects:
+                        if isinstance(game_object2,Bullet):
+                            game_object.checkifhit(game_object2)
+                    if game_object.hp<=0:
+                        game_loop = False
         pygame.display.flip()
         screen.fill((0, 0, 0))
-
         delta_time = clock.tick(fps) / 1000
 
     pygame.quit()
