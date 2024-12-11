@@ -139,25 +139,27 @@ class Player(GameObject):
         if self.shotcooldown >= 0:
             self.shotcooldown -= dt
         if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 0:
-            for i in range(-5, 6):
+            for i in range(-3, 4):
                 spawn(
                     Player_bullet(
                         self.transform.pos + Vector2(4, 20),
                         600,
                         5 * i,
                         self.bulletimg,
+                        1
                     )
                 )
             self.shotcooldown += 0.2
         if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 1:
-            for i in range(0, 4):
+            for i in range(0,30):
                 spawn(
                     Player_laser(
-                        self.transform.pos + Vector2(0, 30+15*i)-Playermove * dt,
-                        590,
-                        0,
-                        self.Laserimg,
-                        )
+                    self.transform.pos + Vector2(0, 38+(32*i))-Playermove * dt,
+                    00,
+                    0,
+                    self.Laserimg,
+                    2
+                    )
                 )
             self.shotcooldown += 0.1
         if pressed_keys[K_x]:
@@ -184,6 +186,10 @@ class Player_bullet(GameObject):
         self.sprite.image = image
         self.sprite.rect = self.sprite.image.get_rect()
         self.dmg=dmg
+        if self.sprite.rect.width>self.sprite.rect.height:
+            self.Bullethit=self.sprite.rect.width*1.1
+        else:
+            self.Bullethit=self.sprite.rect.height*1.1
 
     def update(self, dt):
         self.transform.pos += self.v * dt
@@ -298,13 +304,33 @@ class enemy(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.shotdata = shotdata
         self.hp = hp
-        
+        if self.sprite.rect.width>self.sprite.rect.height:
+            self.Bullethit=self.sprite.rect.width*1.0
+        else:
+            self.Bullethit=self.sprite.rect.height*1.0
+        self.hitcooldown=0
 
     def update(self, dt):
+        if self.hitcooldown >= 0:
+            self.hitcooldown -= dt
         self.transform.pos += self.v * dt
         self.v += self.a * dt
         for x in self.shotdata:
             x.update(dt, self.transform)
+    def checkifhit(self,Bull:GameObject):
+        distance=math.sqrt(abs(self.transform.pos.x-Bull.transform.pos.x)+abs(self.transform.pos.y-Bull.transform.pos.y))
+        if distance <= math.sqrt(self.Bullethit+Bull.Bullethit):
+            if isinstance(Bull,Player_laser):
+                if self.hitcooldown == 0.25:
+                    self.hp-= Bull.dmg*0.2
+                elif self.hitcooldown <=0 :
+                    self.hp-= Bull.dmg
+                    self.hitcooldown = 0.25
+            else:
+                self.hp -= Bull.dmg
+            if self.hp<=0:
+                self.sprite.image=pygame.image.load("Cosmic-bullet\Sprites\Player.png")
+
 
 
 class Scene:
@@ -373,9 +399,15 @@ def main(loading: Scene):
                 if game_object.hitcooldown<=0:
                     for game_object2 in loaded_scene.objects:
                         if isinstance(game_object2,Bullet):
-                            game_object.checkifhit(game_object2)
+                            if game_object.hitcooldown<=0:
+                                game_object.checkifhit(game_object2)
                     if game_object.hp<=0:
                         game_loop = False
+        for game_object in loaded_scene.objects:
+            if isinstance(game_object,enemy):
+                for game_object2 in loaded_scene.objects:
+                    if isinstance(game_object2,Player_bullet):
+                        game_object.checkifhit(game_object2)
         pygame.display.flip()
         screen.fill((0, 0, 0))
         delta_time = clock.tick(fps) / 1000
