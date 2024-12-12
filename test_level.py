@@ -32,7 +32,7 @@ class BulletSpawner(GameObject):
             self.i += 1
 
 
-def scene() -> Scene:
+def stage_1() -> Scene:
     new_scene = Scene(
         Player(),
         enemy(
@@ -58,5 +58,10 @@ def scene() -> Scene:
     )
     return new_scene
 
+def main_menu() -> Scene:
+    new_scene = Scene()
 
-main(scene())
+#import os
+#os.chdir('C:/Users/kirin/Documents/GitHub')
+
+main(stage_1())

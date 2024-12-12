@@ -9,6 +9,9 @@ WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
 
+scene_lib = {
+    
+    }
 loaded_scene = None
 
 
@@ -287,6 +290,29 @@ class enemy(GameObject):
         for x in self.shotdata:
             x.update(dt, self.transform)
 
+class button(GameObject):
+    def __init__(self,x,y,text):
+        self.sprite = pygame.sprite.Sprite()
+        self.transform = Transform2D(x,y,0)
+        self.enabled = "Button(1).png"
+        self.disabled = "Button(2).png"
+        self.type = pygame.sprite.Sprite()
+        self.type.image = font.render(text,False,DARKBLUE)
+        self.type.rect = self.type.image.get_rect(center=(0, 0))
+        self.cooldown = 1
+    def update_sprite(self,image,colour):
+        self.sprite.image = image
+        self.sprite.image.blit(self.type.image,self.type.rect)
+    def update(self,dt):
+        self.cooldown -= dt
+        if self.sprite.rect.collidepoint(pygame.mouse.get_pos()):
+            self.update_sprite(self.enabled,LIGHTBLUE)
+            for event in events:
+                if event.type == MOUSEBUTTONDOWN and self.cooldown <= 0:
+                    pass #Transition to assigned scene
+        else:
+            self.update_sprite(self.disabled,DARKBLUE)
+            self.pressed = False
 
 class Scene:
     objects: list[GameObject]
