@@ -5,6 +5,7 @@ from pygame.locals import *
 import pygame
 import math 
 Playermove = Vector2(0, 0)
+Playerlaseroff = True
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
@@ -107,13 +108,15 @@ class Player(GameObject):
         self.xhold = False
         self.hp = 3
         self.hitcooldown=0
+        self.dead=False
 
     def update(self, dt):
+        global Playerlaseroff
+        global Playermove
         if self.hitcooldown >= 0:
             self.hitcooldown -= dt
             if self.hitcooldown <= 0:
                 self.sprite.image = pygame.image.load("Cosmic-bullet\Sprites\Player.png")
-        global Playermove
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
@@ -151,17 +154,20 @@ class Player(GameObject):
                 )
             self.shotcooldown += 0.2
         if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 1:
-            for i in range(0,30):
-                spawn(
-                    Player_laser(
-                    self.transform.pos + Vector2(0, 38+(32*i))-Playermove * dt,
-                    00,
-                    0,
-                    self.Laserimg,
-                    2
+            if Playerlaseroff:
+                for i in range(0,30):
+                    spawn(
+                        Player_laser(
+                        self.transform.pos + Vector2(0, 38+(32*i))-Playermove * dt,
+                        00,
+                        0,
+                        self.Laserimg,
+                        10
+                        )
                     )
-                )
-            self.shotcooldown += 0.1
+            Playerlaseroff=False
+        else:
+            Playerlaseroff=True
         if pressed_keys[K_x]:
             if not self.xhold:
                 self.shottype += 1
@@ -190,6 +196,7 @@ class Player_bullet(GameObject):
             self.Bullethit=self.sprite.rect.width*1.1
         else:
             self.Bullethit=self.sprite.rect.height*1.1
+        self.dead=False
 
     def update(self, dt):
         self.transform.pos += self.v * dt
@@ -197,6 +204,7 @@ class Player_laser(Player_bullet):
     def update(self, dt):
         global Playermove
         self.transform.pos += self.v * dt + Playermove * dt
+
 
 class Bullet(GameObject):
     def __init__(
@@ -218,6 +226,7 @@ class Bullet(GameObject):
             self.Bullethit=self.sprite.rect.width*0.8
         else:
             self.Bullethit=self.sprite.rect.height*0.8
+        self.dead=False
 
     def update(self, dt):
         self.transform.pos += self.v * dt
@@ -309,6 +318,7 @@ class enemy(GameObject):
         else:
             self.Bullethit=self.sprite.rect.height*1.0
         self.hitcooldown=0
+        self.dead=False
 
     def update(self, dt):
         if self.hitcooldown >= 0:
@@ -328,8 +338,9 @@ class enemy(GameObject):
                     self.hitcooldown = 0.25
             else:
                 self.hp -= Bull.dmg
+                Bull.dead=True
             if self.hp<=0:
-                self.sprite.image=pygame.image.load("Cosmic-bullet\Sprites\Player.png")
+                self.dead=True
 
 
 
@@ -403,11 +414,16 @@ def main(loading: Scene):
                                 game_object.checkifhit(game_object2)
                     if game_object.hp<=0:
                         game_loop = False
-        for game_object in loaded_scene.objects:
             if isinstance(game_object,enemy):
                 for game_object2 in loaded_scene.objects:
                     if isinstance(game_object2,Player_bullet):
                         game_object.checkifhit(game_object2)
+        i = 0
+        while i < len(loaded_scene.objects):
+            if loaded_scene.objects[i].dead or (Playerlaseroff and isinstance(loaded_scene.objects[i],Player_laser)):
+                del loaded_scene.objects[i]
+            else:
+                i += 1
         pygame.display.flip()
         screen.fill((0, 0, 0))
         delta_time = clock.tick(fps) / 1000
