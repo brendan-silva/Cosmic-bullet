@@ -3,8 +3,9 @@ from pygame import Vector2
 from pygame import Rect
 from pygame.locals import *
 import pygame
-from math import *
+import math 
 Playermove = Vector2(0, 0)
+Playerlaseroff = True
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
@@ -90,24 +91,35 @@ class GameObject(metaclass=ABCMeta):
         pass
 
 
+
+
+
 class Player(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.image.load("Cosmic-bullet\Sprites\Player.png")
         self.sprite.rect = self.sprite.image.get_rect(center=(0, 0))
-        self.diagonal_modifier = sqrt(2) / 2
+        self.diagonal_modifier = math.sqrt(2) / 2
         self.shotcooldown = 0
         self.bulletimg = pygame.image.load("Cosmic-bullet\Sprites\Player Bullet 1.png")
-        self.Laserimg = pygame.image.load("Cosmic-bullet\Sprites\Player Laser.png")
+        self.Laserimg = pygame.image.load("Cosmic-bullet\Sprites\Large Player Laser.png")
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
         self.shottype = 0
         self.xhold = False
+        self.hp = 3
+        self.hitcooldown=0
+        self.dead=False
 
     def update(self, dt):
+        global Playerlaseroff
         global Playermove
+        if self.hitcooldown >= 0:
+            self.hitcooldown -= dt
+            if self.hitcooldown <= 0:
+                self.sprite.image = pygame.image.load("Cosmic-bullet\Sprites\Player.png")
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
@@ -133,27 +145,32 @@ class Player(GameObject):
         if self.shotcooldown >= 0:
             self.shotcooldown -= dt
         if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 0:
-            for i in range(-5, 6):
+            for i in range(-3, 4):
                 spawn(
                     Player_bullet(
                         self.transform.pos + Vector2(4, 20),
                         600,
                         5 * i,
                         self.bulletimg,
+                        1
                     )
                 )
             self.shotcooldown += 0.2
         if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 1:
-            for i in range(0, 4):
-                spawn(
-                    Player_laser(
-                        self.transform.pos + Vector2(0, 30+15*i)-Playermove * dt,
-                        590,
+            if Playerlaseroff:
+                for i in range(0,30):
+                    spawn(
+                        Player_laser(
+                        self.transform.pos + Vector2(0, 38+(32*i))-Playermove * dt,
+                        00,
                         0,
                         self.Laserimg,
+                        10
                         )
-                )
-            self.shotcooldown += 0.1
+                    )
+            Playerlaseroff=False
+        else:
+            Playerlaseroff=True
         if pressed_keys[K_x]:
             if not self.xhold:
                 self.shottype += 1
@@ -162,7 +179,12 @@ class Player(GameObject):
             self.xhold = True
         else:
             self.xhold=False
-
+    def checkifhit(self,Bull:GameObject):
+        distance=math.sqrt(abs(self.transform.pos.x-Bull.transform.pos.x)+abs(self.transform.pos.y-Bull.transform.pos.y))
+        if distance <= math.sqrt(4+Bull.Bullethit):
+            self.hp -= 1
+            self.sprite.image = pygame.image.load("Cosmic-bullet\Sprites\Player hit.png")
+            self.hitcooldown = 1
 
 class Player_bullet(GameObject):
     def __init__(self, pos: Vector2, speed: float, ang: float, image: pygame.image,dmg:float=0):
@@ -173,6 +195,11 @@ class Player_bullet(GameObject):
         self.sprite.image = image
         self.sprite.rect = self.sprite.image.get_rect()
         self.dmg=dmg
+        if self.sprite.rect.width>self.sprite.rect.height:
+            self.Bullethit=self.sprite.rect.width*1.1
+        else:
+            self.Bullethit=self.sprite.rect.height*1.1
+        self.dead=False
 
     def update(self, dt):
         self.transform.pos += self.v * dt
@@ -180,6 +207,7 @@ class Player_laser(Player_bullet):
     def update(self, dt):
         global Playermove
         self.transform.pos += self.v * dt + Playermove * dt
+
 
 class Bullet(GameObject):
     def __init__(
@@ -197,6 +225,11 @@ class Bullet(GameObject):
         self.a = pygame.Vector2(0, a[0])
         self.a = self.a.rotate(a[1])
         self.sprite.rect = self.sprite.image.get_rect()
+        if self.sprite.rect.width<self.sprite.rect.height:
+            self.Bullethit=self.sprite.rect.width*0.8
+        else:
+            self.Bullethit=self.sprite.rect.height*0.8
+        self.dead=False
 
     def update(self, dt):
         self.transform.pos += self.v * dt
@@ -283,12 +316,35 @@ class enemy(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.shotdata = shotdata
         self.hp = hp
+        if self.sprite.rect.width>self.sprite.rect.height:
+            self.Bullethit=self.sprite.rect.width*1.0
+        else:
+            self.Bullethit=self.sprite.rect.height*1.0
+        self.hitcooldown=0
+        self.dead=False
 
     def update(self, dt):
+        if self.hitcooldown >= 0:
+            self.hitcooldown -= dt
         self.transform.pos += self.v * dt
         self.v += self.a * dt
         for x in self.shotdata:
             x.update(dt, self.transform)
+    def checkifhit(self,Bull:GameObject):
+        distance=math.sqrt(abs(self.transform.pos.x-Bull.transform.pos.x)+abs(self.transform.pos.y-Bull.transform.pos.y))
+        if distance <= math.sqrt(self.Bullethit+Bull.Bullethit):
+            if isinstance(Bull,Player_laser):
+                if self.hitcooldown == 0.25:
+                    self.hp-= Bull.dmg*0.2
+                elif self.hitcooldown <=0 :
+                    self.hp-= Bull.dmg
+                    self.hitcooldown = 0.25
+            else:
+                self.hp -= Bull.dmg
+                Bull.dead=True
+            if self.hp<=0:
+                self.dead=True
+
 
 class button(GameObject):
     def __init__(self,x,y,text):
@@ -375,9 +431,27 @@ def main(loading: Scene):
 
         for game_object in loaded_scene.objects:
             render(game_object, screen)
+        for game_object in loaded_scene.objects:
+            if isinstance(game_object,Player):
+                if game_object.hitcooldown<=0:
+                    for game_object2 in loaded_scene.objects:
+                        if isinstance(game_object2,Bullet):
+                            if game_object.hitcooldown<=0:
+                                game_object.checkifhit(game_object2)
+                    if game_object.hp<=0:
+                        game_loop = False
+            if isinstance(game_object,enemy):
+                for game_object2 in loaded_scene.objects:
+                    if isinstance(game_object2,Player_bullet):
+                        game_object.checkifhit(game_object2)
+        i = 0
+        while i < len(loaded_scene.objects):
+            if loaded_scene.objects[i].dead or (Playerlaseroff and isinstance(loaded_scene.objects[i],Player_laser)):
+                del loaded_scene.objects[i]
+            else:
+                i += 1
         pygame.display.flip()
         screen.fill((0, 0, 0))
-
         delta_time = clock.tick(fps) / 1000
 
     pygame.quit()
