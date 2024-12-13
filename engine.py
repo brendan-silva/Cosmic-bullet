@@ -12,9 +12,7 @@ WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
 
-scene_lib = {
-    
-    }
+scene_lib = {}
 scene_change = None
 loaded_scene = None
 
@@ -199,7 +197,6 @@ class Player(GameObject):
             self.xhold = False
 
     def hit(self, other: Self):
-        print(type(other))
         if isinstance(other, Bullet):
             # GameObject.delete(other)
             if self.hitcooldown <= 0:
@@ -363,47 +360,52 @@ class enemy(GameObject):
         for x in self.shotdata:
             x.update(dt, self.transform)
 
-    def checkifhit(self, Bull: GameObject):
-        distance = math.sqrt(
-            abs(self.transform.pos.x - Bull.transform.pos.x)
-            + abs(self.transform.pos.y - Bull.transform.pos.y)
-        )
-        if distance <= math.sqrt(self.Bullethit + Bull.Bullethit):
-            if isinstance(Bull, Player_laser):
-                if self.hitcooldown == 0.25:
-                    self.hp -= Bull.dmg * 0.2
-                elif self.hitcooldown <= 0:
-                    self.hp -= Bull.dmg
-                    self.hitcooldown = 0.25
-            else:
-                self.hp -= Bull.dmg
-                Bull.dead = True
+    def hit(self, other: GameObject):
+        if isinstance(other, Player_laser):
+            if self.hitcooldown == 0.25:
+                self.hp -= other.dmg * 0.2
+            elif self.hitcooldown <= 0:
+                self.hp -= other.dmg
+                self.hitcooldown = 0.25
+
             if self.hp <= 0:
                 self.dead = True
 
 
+class Scene:
+    objects: list[GameObject]
+
+    def __init__(self, *objects):
+        self.objects = list(objects)
+
+    def spawn(self, game_object):
+        self.objects.append(game_object)
+
+
 class button(GameObject):
-    def __init__(self,x,y,text):
+    def __init__(self, x, y, text):
         self.sprite = pygame.sprite.Sprite()
-        self.transform = Transform2D(x,y,0)
+        self.transform = Transform2D(x, y, 0)
         self.enabled = "Button(1).png"
         self.disabled = "Button(2).png"
         self.type = pygame.sprite.Sprite()
-        self.type.image = font.render(text,False,DARKBLUE)
+        self.type.image = font.render(text, False, DARKBLUE)
         self.type.rect = self.type.image.get_rect(center=(0, 0))
         self.cooldown = 1
-    def update_sprite(self,image,colour):
+
+    def update_sprite(self, image, colour):
         self.sprite.image = image
-        self.sprite.image.blit(self.type.image,self.type.rect)
-    def update(self,dt):
+        self.sprite.image.blit(self.type.image, self.type.rect)
+
+    def update(self, dt):
         self.cooldown -= dt
         if self.sprite.rect.collidepoint(pygame.mouse.get_pos()):
-            self.update_sprite(self.enabled,LIGHTBLUE)
+            self.update_sprite(self.enabled, LIGHTBLUE)
             for event in events:
                 if event.type == MOUSEBUTTONDOWN and self.cooldown <= 0:
-                    pass #Transition to assigned scene
+                    pass  # Transition to assigned scene
         else:
-            self.update_sprite(self.disabled,DARKBLUE)
+            self.update_sprite(self.disabled, DARKBLUE)
             self.pressed = False
 
     objects: list[GameObject]
@@ -455,7 +457,45 @@ def spawn(game_object: GameObject):
     loaded_scene.spawn(game_object)
 
 
-def main(loading:str,lib:dict):
+def collison_decection(game_objects: GameObject):
+    for index, game_object in enumerate(game_objects):
+        # Need to figure out a way to check if the bullet has collided with anything without terrible performance
+        if game_object.sprite.rect is not None and not isinstance(game_object, Bullet):
+            # get all objects except current
+            objects = game_objects[:index] + game_objects[index + 1:]
+
+            # gets all the rects calculated from there position and hitbox
+            rects = list(
+                map(
+                    lambda obj: rect_from_hitbox_and_pos(
+                        obj.transform.pos, obj.sprite.rect
+                    ),
+                    objects,
+                )
+            )
+
+            # Check collisions
+            collided = rect_from_hitbox_and_pos(
+                game_object.transform.pos, game_object.sprite.rect
+            ).collidelistall(rects)
+
+            # Get original index before removing current element
+            collided = map(
+                lambda index_collided: (
+                    index_collided + 1 if index_collided >= index else index_collided
+                ),
+                collided,
+            )
+
+            # get objects form the collisions
+            collided_objects = [game_objects[i] for i in collided]
+
+            # Call collsion callback
+            for other_object in collided_objects:
+                game_object.hit(other_object)
+
+
+def main(loading: str, lib: dict):
     global loaded_scene
     global scene_lib
     global scene_change
@@ -503,14 +543,14 @@ def main(loading:str,lib:dict):
                 del loaded_scene.objects[i]
             else:
                 i += 1
-        #test
-        end=0
+        # test
+        end = 0
         for game_object in loaded_scene.objects:
-            if isinstance(game_object,enemy):
-                end+=1
+            if isinstance(game_object, enemy):
+                end += 1
         if end == 0:
-            scene_change ='stage_2'
-        #test
+            scene_change = "stage_2"
+        # test
         if not (scene_change == None):
             loaded_scene = scene_lib[scene_change]
             scene_change = None

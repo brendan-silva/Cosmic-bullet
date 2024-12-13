@@ -5,7 +5,6 @@ import pygame
 import engine
 
 
-
 def stage_1() -> Scene:
     new_scene = Scene(
         Player(),
@@ -31,6 +30,8 @@ def stage_1() -> Scene:
         ),
     )
     return new_scene
+
+
 def stage_2() -> Scene:
     new_scene = Scene(
         Player(),
@@ -56,10 +57,13 @@ def stage_2() -> Scene:
         ),
     )
     return new_scene
+
+
 def main_menu() -> Scene:
     new_scene = Scene()
 
-#import os
-#os.chdir('C:/Users/kirin/Documents/GitHub')
 
-main('stage_1',lib={'stage_1':stage_1(),'stage_2':stage_2()})
+# import os
+# os.chdir('C:/Users/kirin/Documents/GitHub')
+
+main("stage_1", lib={"stage_1": stage_1(), "stage_2": stage_2()})
