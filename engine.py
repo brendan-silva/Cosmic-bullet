@@ -13,6 +13,7 @@ WHITE = (255, 255, 255)
 scene_lib = {
     
     }
+scene_change = None
 loaded_scene = None
 
 
@@ -412,9 +413,12 @@ def spawn(game_object: GameObject):
     loaded_scene.spawn(game_object)
 
 
-def main(loading: Scene):
+def main(loading:str,lib:dict):
     global loaded_scene
-    loaded_scene = loading
+    global scene_lib
+    global scene_change
+    scene_lib = lib
+    loaded_scene = scene_lib[loading]
     delta_time: float = 0
     fps = 60
     pygame.init()
@@ -450,6 +454,17 @@ def main(loading: Scene):
                 del loaded_scene.objects[i]
             else:
                 i += 1
+        #test
+        end=0
+        for game_object in loaded_scene.objects:
+            if isinstance(game_object,enemy):
+                end+=1
+        if end == 0:
+            scene_change ='stage_2'
+        #test
+        if not (scene_change == None):
+            loaded_scene = scene_lib[scene_change]
+            scene_change = None
         pygame.display.flip()
         screen.fill((0, 0, 0))
         delta_time = clock.tick(fps) / 1000
