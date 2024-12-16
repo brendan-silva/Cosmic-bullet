@@ -4,6 +4,7 @@ from pygame import Rect
 from pygame.locals import *
 import pygame
 import math 
+import copy
 Playermove = Vector2(0, 0)
 Playerlaseroff = True
 WIDTH = 1536
@@ -295,7 +296,76 @@ class shotdata:
             self.i += 1
             if self.i == self.incrementcap:
                 self.i = 0
+class wavedata(GameObject):
+    def __init__(
+        self,
+        transformation: Transform2D,
+        image: pygame.image,
+        v: list[float, float] = [0, 0],
+        a: list[float, float] = [0, 0],
+        enemysPerBurst: int = 1,
+        shottime: float = 1,
+        timeoffset: float = 0,
+        Burstchange: list[float, float, float, float] = [0, 0, 0, 0],
+        incrementchange: list[float, float, float, float] = [0, 0, 0, 0],
+        incrementcap: int = 1,
+        shotdata:list[shotdata]=None,
+        hp:float=1
+    ):
+        self.sprite=None
+        self.transform = transformation
+        self.image = image
+        self.v = v
+        self.a = a
+        self.repeat =enemysPerBurst
+        self.shotrate = shottime
+        self.repeatchange = Burstchange
+        self.incrementchange = incrementchange
+        self.shotcooldown = timeoffset
+        self.i = 0
+        self.incrementcap = incrementcap
+        self.dead=False
+        self.shotdata=shotdata
+        self.hp=hp
+        self.aaaa=[]
 
+
+    def update(self, dt,):
+        if self.shotcooldown >= 0:
+            self.shotcooldown -= dt
+        if self.shotcooldown <= 0:
+            self.aaaa=[]
+            for y in self.shotdata:
+                self.aaaa.append(copy.copy(y))
+            for x in range(0, self.repeat):
+                spawn(
+                    enemy(
+                        self.transform+Transform2D(0,0,0),
+                        self.image,
+                        [
+                            self.v[0]
+                            + x * self.repeatchange[0]
+                            + self.i * self.incrementchange[0],
+                            self.v[1]
+                            + x * self.repeatchange[1]
+                            + self.i * self.incrementchange[1],
+                        ],
+                        [
+                            self.a[0]
+                            + x * self.repeatchange[2]
+                            + self.i * self.incrementchange[2],
+                            self.a[1]
+                            + x * self.repeatchange[3]
+                            + self.i * self.incrementchange[3],
+                        ],
+                        self.hp,
+                        self.aaaa
+                    )
+                )
+            self.shotcooldown += self.shotrate
+            self.i += 1
+            if self.i == self.incrementcap:
+                self.dead=True
 
 class enemy(GameObject):
     def __init__(
@@ -329,8 +399,9 @@ class enemy(GameObject):
             self.hitcooldown -= dt
         self.transform.pos += self.v * dt
         self.v += self.a * dt
-        for x in self.shotdata:
-            x.update(dt, self.transform)
+        if not self.shotdata is None:
+            for x in self.shotdata:
+                x.update(dt, self.transform)
     def checkifhit(self,Bull:GameObject):
         distance=math.sqrt(abs(self.transform.pos.x-Bull.transform.pos.x)+abs(self.transform.pos.y-Bull.transform.pos.y))
         if distance <= math.sqrt(self.Bullethit+Bull.Bullethit):
@@ -391,7 +462,7 @@ def world_pos_to_screen_pos(pos: Vector2) -> Vector2:
 
 def render(game_object: GameObject, screen: pygame.Surface):
     """Render a game object to any surface"""
-    if game_object.sprite is not None:
+    if not game_object.sprite is None:
         world_pos = game_object.transform
         screen_pos = world_pos_to_screen_pos(world_pos.pos)
 
