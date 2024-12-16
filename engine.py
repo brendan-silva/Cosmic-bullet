@@ -361,10 +361,10 @@ class wavedata(GameObject):
         if self.shotcooldown >= 0:
             self.shotcooldown -= dt
         if self.shotcooldown <= 0:
-            self.aaaa=[]
-            for y in self.shotdata:
-                self.aaaa.append(copy.copy(y))
             for x in range(0, self.repeat):
+                self.aaaa=[]
+                for y in self.shotdata:
+                    self.aaaa.append(copy.copy(y))
                 spawn(
                     enemy(
                         self.transform+Transform2D(0,0,0),
