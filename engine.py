@@ -512,7 +512,14 @@ def render(game_object: GameObject, screen: pygame.Surface, debug: bool = False)
             ),
             rect,
         )
+class Scene:
+    objects: list[GameObject]
 
+    def __init__(self, *objects):
+        self.objects = list(objects)
+
+    def spawn(self, game_object):
+        self.objects.append(game_object)
 
 def spawn(game_object: GameObject):
     """Spawn a game object in the active scene"""
