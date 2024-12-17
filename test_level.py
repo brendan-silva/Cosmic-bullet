@@ -72,4 +72,4 @@ def main_menu() -> Scene:
 # import os
 # os.chdir('C:/Users/kirin/Documents/GitHub')
 
-main('stage_1',lib={'stage_1':stage_1(),'stage_2':stage_2()})
+main('stage_2',lib={'stage_1':stage_1(),'stage_2':stage_2()})

@@ -124,6 +124,7 @@ class Player(GameObject):
         self.hp = 3
         self.hitcooldown = 0
         self.dead = False
+        self.Bullethit=2
 
     def update(self, dt):
         global Playerlaseroff
@@ -196,15 +197,16 @@ class Player(GameObject):
         else:
             self.xhold = False
 
-    def hit(self, other: Self):
-        if isinstance(other, Bullet):
-            # GameObject.delete(other)
-            if self.hitcooldown <= 0:
+    def checkifhit(self,Bull):
+        if self.hitcooldown <= 0:
+            if math.pow(self.transform.pos.x-Bull.transform.pos.x,2)+math.pow(self.transform.pos.y-Bull.transform.pos.y,2) <= math.pow(self.Bullethit+Bull.Bullethit,2):
                 self.hp -= 1
                 self.hitcooldown = 1
                 self.sprite.image = pygame.image.load(
                     "Cosmic-bullet/Sprites/Player hit.png"
                 )
+                if self.hp<=0:
+                    self.dead=True
 
 
 class Player_bullet(GameObject):
@@ -224,9 +226,9 @@ class Player_bullet(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.dmg = dmg
         if self.sprite.rect.width > self.sprite.rect.height:
-            self.Bullethit = self.sprite.rect.width * 1.1
+            self.Bullethit = self.sprite.rect.width * 0.5
         else:
-            self.Bullethit = self.sprite.rect.height * 1.1
+            self.Bullethit = self.sprite.rect.height * 0.5
         self.dead = False
 
     def update(self, dt):
@@ -256,9 +258,9 @@ class Bullet(GameObject):
         self.a = self.a.rotate(a[1])
         self.sprite.rect = self.sprite.image.get_rect()
         if self.sprite.rect.width < self.sprite.rect.height:
-            self.Bullethit = self.sprite.rect.width * 0.8
+            self.Bullethit = self.sprite.rect.width * 0.5
         else:
-            self.Bullethit = self.sprite.rect.height * 0.8
+            self.Bullethit = self.sprite.rect.height * 0.5
         self.dead = False
 
     def update(self, dt):
@@ -415,9 +417,9 @@ class enemy(GameObject):
         self.shotdata = shotdata
         self.hp = hp
         if self.sprite.rect.width > self.sprite.rect.height:
-            self.Bullethit = self.sprite.rect.width * 1.0
+            self.Bullethit = self.sprite.rect.width * 0.5
         else:
-            self.Bullethit = self.sprite.rect.height * 1.0
+            self.Bullethit = self.sprite.rect.height * 0.5
         self.hitcooldown = 0
         self.dead = False
 
@@ -428,18 +430,18 @@ class enemy(GameObject):
         self.v += self.a * dt
         for x in self.shotdata:
             x.update(dt, self.transform)
-    def checkifhit(self,Bull:GameObject):
-        distance=math.sqrt(abs(self.transform.pos.x-Bull.transform.pos.x)+abs(self.transform.pos.y-Bull.transform.pos.y))
-        if distance <= math.sqrt(self.Bullethit+Bull.Bullethit):
-            if isinstance(Bull,Player_laser):
+    
+    def checkifhit(self,Object):
+        if math.pow(self.transform.pos.x-Object.transform.pos.x,2)+math.pow(self.transform.pos.y-Object.transform.pos.y,2) <= math.pow(self.Bullethit+Object.Bullethit,2):
+            if isinstance(Object,Player_laser):
                 if self.hitcooldown == 0.25:
-                    self.hp-= Bull.dmg*0.2
+                    self.hp-= Object.dmg*0.2
                 elif self.hitcooldown <=0 :
-                    self.hp-= Bull.dmg
+                    self.hp-= Object.dmg
                     self.hitcooldown = 0.25
             else:
-                self.hp -= Bull.dmg
-                Bull.dead=True
+                self.hp -= Object.dmg
+                Object.dead=True
             if self.hp<=0:
                 self.dead=True
 
@@ -493,19 +495,13 @@ def rect_from_hitbox_and_pos(pos: Vector2, hitbox: Rect) -> Rect:
     return Rect(pos.x - width / 2, pos.y - height / 2, width, height)
 
 
-def render(game_object: GameObject, screen: pygame.Surface, debug: bool = False):
+def render(game_object: GameObject, screen: pygame.Surface,):
     """Render a game object to any surface"""
     if not game_object.sprite is None:
         world_pos = game_object.transform
         screen_pos = world_pos_to_screen_pos(world_pos.pos)
-
         sprite = game_object.sprite
-
         rect = rect_from_hitbox_and_pos(screen_pos, sprite.rect)
-
-        if debug:
-            pygame.draw.rect(screen, (255, 0, 0), rect, width=2)
-
         screen.blit(
             pygame.transform.rotate(
                 game_object.sprite.image, -game_object.transform.rotation
@@ -517,51 +513,23 @@ class Scene:
 
     def __init__(self, *objects):
         self.objects = list(objects)
+        self.player = None
+        self.i=0
+        while self.i < len(self.objects):
+            if isinstance(self.objects[self.i], Player):
+                self.player = self.objects[self.i]
+            self.i += 1
+        del self.i
+
 
     def spawn(self, game_object):
         self.objects.append(game_object)
+        
 
 def spawn(game_object: GameObject):
     """Spawn a game object in the active scene"""
     loaded_scene.spawn(game_object)
 
-
-def collison_decection(game_objects: GameObject):
-    for index, game_object in enumerate(game_objects):
-        # Need to figure out a way to check if the bullet has collided with anything without terrible performance
-        if game_object.sprite.rect is not None and not isinstance(game_object, Bullet):
-            # get all objects except current
-            objects = game_objects[:index] + game_objects[index + 1:]
-
-            # gets all the rects calculated from there position and hitbox
-            rects = list(
-                map(
-                    lambda obj: rect_from_hitbox_and_pos(
-                        obj.transform.pos, obj.sprite.rect
-                    ),
-                    objects,
-                )
-            )
-
-            # Check collisions
-            collided = rect_from_hitbox_and_pos(
-                game_object.transform.pos, game_object.sprite.rect
-            ).collidelistall(rects)
-
-            # Get original index before removing current element
-            collided = map(
-                lambda index_collided: (
-                    index_collided + 1 if index_collided >= index else index_collided
-                ),
-                collided,
-            )
-
-            # get objects form the collisions
-            collided_objects = [game_objects[i] for i in collided]
-
-            # Call collsion callback
-            for other_object in collided_objects:
-                game_object.hit(other_object)
 
 
 def main(loading: str, lib: dict):
@@ -593,18 +561,17 @@ def main(loading: str, lib: dict):
                 lambda game_obj: game_object.sprite is not None, loaded_scene.objects
             )
         )
-
         for game_object in game_objects_with_sprites:
-            render(game_object, screen, True)
-
-        collison_decection(game_objects_with_sprites)
-
-        if isinstance(game_object, enemy):
-            for game_object2 in loaded_scene.objects:
-                if isinstance(game_object2, Player_bullet):
-                    game_object.checkifhit(game_object2)
-
+            render(game_object, screen)
         i = 0
+        for b in loaded_scene.objects:
+            if isinstance(b, Bullet):
+                loaded_scene.player.checkifhit(b)
+        for e in loaded_scene.objects:
+            if isinstance(e,enemy):
+                for pb in loaded_scene.objects:
+                    if isinstance(pb, Player_bullet):
+                        e.checkifhit(pb)
         while i < len(loaded_scene.objects):
             if loaded_scene.objects[i].dead or (
                 Playerlaseroff and isinstance(loaded_scene.objects[i], Player_laser)
@@ -612,14 +579,6 @@ def main(loading: str, lib: dict):
                 del loaded_scene.objects[i]
             else:
                 i += 1
-        # test
-        end = 0
-        for game_object in loaded_scene.objects:
-            if isinstance(game_object, enemy):
-                end += 1
-        if end == 0:
-            scene_change = "stage_2"
-        # test
         if not (scene_change == None):
             loaded_scene = scene_lib[scene_change]
             scene_change = None
