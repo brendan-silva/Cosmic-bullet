@@ -9,6 +9,8 @@ Playerlaseroff = True
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
+DARKBLUE = (35,33,87)
+LIGHTBLUE = (79,90,154)
 
 scene_lib = {
     
@@ -345,30 +347,54 @@ class enemy(GameObject):
             if self.hp<=0:
                 self.dead=True
 
+class textobject(GameObject):
+    def __init__(self,x,y,text,colour,size=72):
+        self.font = pygame.font.Font(None, size)
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = pygame.font.Font.render(self.font,text,False,colour)
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.center = self.sprite.rect.center
+        self.transform = Transform2D(x,y,0)
+        self.dead = False
+        self.text = text
+        self.colour = colour
+    def update(self,dt):
+        if dt >= 0:
+            self.changetext("newtext")
+    def changetext(self,text,recenter=False):
+        self.sprite.image = pygame.font.Font.render(self.font,text,False,self.colour)
+        self.sprite.rect = self.sprite.image.get_rect()
+        if recenter:
+            self.sprite.rect.center = self.center
 
 class button(GameObject):
-    def __init__(self,x,y,text):
+    def __init__(self,x,y,scene,text=""):
         self.sprite = pygame.sprite.Sprite()
         self.transform = Transform2D(x,y,0)
-        self.enabled = "Button(1).png"
-        self.disabled = "Button(2).png"
-        self.type = pygame.sprite.Sprite()
-        self.type.image = font.render(text,False,DARKBLUE)
-        self.type.rect = self.type.image.get_rect(center=(0, 0))
-        self.cooldown = 1
+        self.enabled = pygame.image.load("Cosmic-bullet\Sprites\Button(1).png")
+        self.disabled = pygame.image.load("Cosmic-bullet\Sprites\Button(2).png")
+        self.type = textobject(0,0,text,DARKBLUE)
+        self.cooldown = 0
+        self.text = text
+        self.update_sprite(self.enabled,DARKBLUE)
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.dead = False
+        self.scene = scene
     def update_sprite(self,image,colour):
+        self.type = textobject(0,0,self.text,colour)
+        self.sprite = pygame.sprite.Sprite()
         self.sprite.image = image
-        self.sprite.image.blit(self.type.image,self.type.rect)
+        self.sprite.image.blit(self.type.sprite.image,self.type.sprite.rect)
+        self.sprite.rect = self.sprite.image.get_rect()
     def update(self,dt):
+        global mousedown
         self.cooldown -= dt
-        if self.sprite.rect.collidepoint(pygame.mouse.get_pos()):
-            self.update_sprite(self.enabled,LIGHTBLUE)
-            for event in events:
-                if event.type == MOUSEBUTTONDOWN and self.cooldown <= 0:
-                    pass #Transition to assigned scene
+        if self.sprite.rect.collidepoint((pygame.mouse.get_pos()[0]-WIDTH/2+self.sprite.rect.width/2,pygame.mouse.get_pos()[1]-HEIGHT/2+self.sprite.rect.height/2)):
+            self.update_sprite(self.disabled,LIGHTBLUE)
+            if mousedown == True:
+                pass
         else:
-            self.update_sprite(self.disabled,DARKBLUE)
-            self.pressed = False
+            self.update_sprite(self.enabled,DARKBLUE)
 
 class Scene:
     objects: list[GameObject]
@@ -421,11 +447,15 @@ def main(loading: Scene):
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
     game_loop = True
+    global mousedown
+    mousedown = False
 
     while game_loop:
         for event in pygame.event.get():
             if event.type == QUIT:
                 game_loop = False
+            if event.type == MOUSEBUTTONDOWN:
+                mousedown = True
         for game_object in loaded_scene.objects:
             game_object.update(delta_time)
 
@@ -453,6 +483,7 @@ def main(loading: Scene):
         pygame.display.flip()
         screen.fill((0, 0, 0))
         delta_time = clock.tick(fps) / 1000
+        mousedown = False
 
     pygame.quit()
 
