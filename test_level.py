@@ -70,14 +70,14 @@ def stage_2() -> Scene:
             2,
             [0,0,0,0],
             [0,10,0,0],
-            100,
+            1,
             [
                 shotdata(
                     Transform2D(0, 0, 0),
                     pygame.image.load("Cosmic-bullet\Sprites\Enemy Bullet 1.png"),
                     [00, 0],
-                    [100, 0],
-                    1,
+                    [0, 0],
+                    100,
                     0.1,
                     0,
                     [0, 0, 0, 0],
@@ -96,4 +96,4 @@ def main_menu() -> Scene:
     )
     return new_scene
 
-main('stage_1',lib={'stage_1':stage_1(),'stage_2':stage_2(),'main_menu':main_menu()})
+main('stage_2',lib={'stage_1':stage_1(),'stage_2':stage_2(),'main_menu':main_menu()})
