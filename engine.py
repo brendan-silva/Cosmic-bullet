@@ -447,6 +447,7 @@ class enemy(GameObject):
 
 class textobject(GameObject):
     def __init__(self,x,y,text,colour,size=72):
+        pygame.font.init()
         self.font = pygame.font.Font(None, size)
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.font.Font.render(self.font,text,False,colour)
@@ -457,8 +458,7 @@ class textobject(GameObject):
         self.text = text
         self.colour = colour
     def update(self,dt):
-        if dt >= 0:
-            self.changetext("newtext")
+        pass
     def changetext(self,text,recenter=False):
         self.sprite.image = pygame.font.Font.render(self.font,text,False,self.colour)
         self.sprite.rect = self.sprite.image.get_rect()
@@ -466,7 +466,7 @@ class textobject(GameObject):
             self.sprite.rect.center = self.center
 
 class button(GameObject):
-    def __init__(self,x,y,scene,text=""):
+    def __init__(self,x,y,scene,text="",quitbutton=False):
         self.sprite = pygame.sprite.Sprite()
         self.transform = Transform2D(x,y,0)
         self.enabled = pygame.image.load("Cosmic-bullet\Sprites\Button(1).png")
@@ -477,6 +477,7 @@ class button(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.dead = False
         self.scene = scene
+        self.quitbutton = quitbutton
     def update_sprite(self,image,colour):
         self.type = textobject(0,0,self.text,colour)
         self.sprite = pygame.sprite.Sprite()
@@ -488,17 +489,20 @@ class button(GameObject):
         if self.sprite.rect.collidepoint((pygame.mouse.get_pos()[0]-WIDTH/2+self.sprite.rect.width/2,pygame.mouse.get_pos()[1]-HEIGHT/2+self.sprite.rect.height/2)):
             self.update_sprite(self.disabled,LIGHTBLUE)
             if mousedown == True:
-                pass
+                if self.quitbutton:
+                    pygame.quit()
+                global scene_change
+                scene_change = self.scene
         else:
             self.update_sprite(self.enabled,DARKBLUE)
 
-    objects: list[GameObject]
+    #objects: list[GameObject]
 
-    def __init__(self, *objects):
-        self.objects = list(objects)
+    #def __init__(self, *objects):
+    #    self.objects = list(objects)
 
-    def spawn(self, game_object):
-        self.objects.append(game_object)
+    #def spawn(self, game_object):
+    #    self.objects.append(game_object)
 
 
 def world_pos_to_screen_pos(pos: Vector2) -> Vector2:
@@ -603,7 +607,7 @@ def main(loading: str, lib: dict):
 
     while game_loop:
         for event in pygame.event.get():
-            if event.type == QUIT:
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 game_loop = False
             if event.type == MOUSEBUTTONDOWN:
                 mousedown = True
