@@ -447,6 +447,16 @@ class enemy(GameObject):
             if self.hp<=0:
                 self.dead=True
 
+class image(GameObject):
+    def __init__(self,x,y,path,rot=0):
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = pygame.image.load(path)
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.transform = Transform2D(x,y,0)
+        self.dead = False
+    def update(self,dt):
+        self.transform.rotation = rot*math.sin(dt)
+
 class textobject(GameObject):
     def __init__(self,x,y,text,colour,size=72):
         pygame.font.init()
@@ -471,8 +481,8 @@ class button(GameObject):
     def __init__(self,x,y,scene,text="",quitbutton=False):
         self.sprite = pygame.sprite.Sprite()
         self.transform = Transform2D(x,y,0)
-        self.enabled = pygame.image.load("Cosmic-bullet\Sprites\Button(1).png")
-        self.disabled = pygame.image.load("Cosmic-bullet\Sprites\Button(2).png")
+        self.enabled = pygame.image.load("Cosmic-bullet\Sprites\Button(1B).png")
+        self.disabled = pygame.image.load("Cosmic-bullet\Sprites\Button(2B).png")
         self.type = textobject(0,0,text,DARKBLUE)
         self.text = text
         self.update_sprite(self.enabled,DARKBLUE)
@@ -484,8 +494,9 @@ class button(GameObject):
         self.type = textobject(0,0,self.text,colour)
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = image
-        self.sprite.image.blit(self.type.sprite.image,self.type.sprite.rect)
         self.sprite.rect = self.sprite.image.get_rect()
+        coords = (self.sprite.rect.center[0]-self.type.sprite.rect.width/2,self.sprite.rect.center[1]-self.type.sprite.rect.height/2)
+        self.sprite.image.blit(self.type.sprite.image,coords)
     def update(self,dt):
         global mousedown
         if self.sprite.rect.collidepoint((pygame.mouse.get_pos()[0]-WIDTH/2+self.sprite.rect.width/2,pygame.mouse.get_pos()[1]-HEIGHT/2+self.sprite.rect.height/2)):
