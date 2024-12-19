@@ -44,14 +44,14 @@ def stage_2() -> Scene:
             2,
             [0,0,0,0],
             [0,10,0,0],
-            100,
+            1,
             [
                 shotdata(
                     Transform2D(0, 0, 0),
                     pygame.image.load("Cosmic-bullet\Sprites\Enemy Bullet 1.png"),
                     [00, 0],
-                    [100, 0],
-                    1,
+                    [0, 0],
+                    100,
                     0.1,
                     0,
                     [0, 0, 0, 0],
