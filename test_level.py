@@ -80,8 +80,9 @@ def stage_2() -> Scene:
 
 def main_menu() -> Scene:
     new_scene = Scene(
-        button(0,0,"test","Test Button")
+        #textobject(0,0,"Test",WHITE)
+        button(0,0,"stage_2","New Game",False)
     )
     return new_scene
 
-main('stage_1',lib={'stage_1':stage_1(),'stage_2':stage_2(),'main_menu':main_menu()})
+main('main_menu',lib={'stage_1':stage_1(),'stage_2':stage_2(),'main_menu':main_menu()})
