@@ -110,13 +110,13 @@ class Player(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = pygame.sprite.Sprite()
-        self.sprite.image = pygame.image.load("Cosmic-bullet/Sprites/Player.png")
+        self.sprite.image = pygame.image.load("Sprites/Player.png")
         self.sprite.rect = self.sprite.image.get_rect(center=(0, 0))
         self.diagonal_modifier = math.sqrt(2) / 2
         self.shotcooldown = 0
-        self.bulletimg = pygame.image.load("Cosmic-bullet/Sprites/Player Bullet 1.png")
+        self.bulletimg = pygame.image.load("Sprites/Player Bullet 1.png")
         self.Laserimg = pygame.image.load(
-            "Cosmic-bullet/Sprites/Large Player Laser.png"
+            "Sprites/Large Player Laser.png"
         )
         self.v = Vector2(0, 400)
         self.vy = 0
@@ -135,7 +135,7 @@ class Player(GameObject):
             self.hitcooldown -= dt
             if self.hitcooldown <= 0:
                 self.sprite.image = pygame.image.load(
-                    "Cosmic-bullet/Sprites/Player.png"
+                    "Sprites/Player.png"
                 )
         self.v = Vector2(0, 400)
         self.vy = 0
@@ -205,7 +205,7 @@ class Player(GameObject):
                 self.hp -= 1
                 self.hitcooldown = 1
                 self.sprite.image = pygame.image.load(
-                    "Cosmic-bullet/Sprites/Player hit.png"
+                    "Sprites/Player hit.png"
                 )
                 if self.hp<=0:
                     self.dead=True
@@ -451,6 +451,40 @@ class enemy(GameObject):
             if self.hp<=0:
                 self.dead=True
 
+class bossenemy(enemy):
+    def __init__(
+        self,
+        transformation: Transform2D,
+        image: pygame.image,
+        nextStage:str,
+        hpAll:list[float]=[0],
+        shotdataAll:list[list[shotdata]]=[None]
+        ):
+        super().__init__(transformation,image,[0,0],[0,0],hpAll[0],shotdataAll[0])
+        self.hpAll=hpAll
+        self.shotdataAll=shotdataAll
+        self.bosspPhase=0
+        self.nextStage=nextStage
+    def update(self, dt):
+        if self.hitcooldown >= 0:
+            self.hitcooldown -= dt
+        self.movement(dt)
+        for x in self.shotdata:
+            x.update(dt, self.transform)
+    def movement(self, dt):
+        self.dead=False
+    def checkifhit(self,Object):
+        global scene_change
+        enemy.checkifhit(self,Object)
+        if self.dead:
+            self.bosspPhase+=1
+            self.dead=False
+        if len(self.hpAll)>self.bosspPhase:
+            self.hp=self.hpAll[self.bosspPhase]
+            self.shotdata=self.shotdataAll[self.bosspPhase]
+        else:
+            scene_change=self.nextStage
+
 class textobject(GameObject):
     def __init__(self,x,y,text,colour,size=72):
         self.font = pygame.font.Font(None, size)
@@ -475,8 +509,8 @@ class button(GameObject):
     def __init__(self,x,y,scene,text=""):
         self.sprite = pygame.sprite.Sprite()
         self.transform = Transform2D(x,y,0)
-        self.enabled = pygame.image.load("Cosmic-bullet\Sprites\Button(1).png")
-        self.disabled = pygame.image.load("Cosmic-bullet\Sprites\Button(2).png")
+        self.enabled = pygame.image.load("Sprites\Button(1).png")
+        self.disabled = pygame.image.load("Sprites\Button(2).png")
         self.type = textobject(0,0,text,DARKBLUE)
         self.text = text
         self.update_sprite(self.enabled,DARKBLUE)
