@@ -458,16 +458,31 @@ class bossenemy(enemy):
         image: pygame.image,
         nextStage:str,
         hpAll:list[float]=[0],
+        timerAll:list[float]=[0],
         shotdataAll:list[list[shotdata]]=[None]
         ):
         super().__init__(transformation,image,[0,0],[0,0],hpAll[0],shotdataAll[0])
         self.hpAll=hpAll
+        self.timerAll=timerAll
+        self.timer=timerAll[0]
         self.shotdataAll=shotdataAll
-        self.bosspPhase=0
+        self.bossPhase=0
         self.nextStage=nextStage
     def update(self, dt):
+        global scene_change
         if self.hitcooldown >= 0:
             self.hitcooldown -= dt
+        self.timer -= dt
+        
+        if self.timer <= 0:
+            self.bossPhase+=1
+            self.dead=False
+            if len(self.hpAll)>self.bossPhase:
+                self.hp=self.hpAll[self.bossPhase]
+                self.timer=self.timerAll[self.bossPhase]
+                self.shotdata=self.shotdataAll[self.bossPhase]
+            else:
+                scene_change=self.nextStage
         self.movement(dt)
         for x in self.shotdata:
             x.update(dt, self.transform)
@@ -477,13 +492,42 @@ class bossenemy(enemy):
         global scene_change
         enemy.checkifhit(self,Object)
         if self.dead:
-            self.bosspPhase+=1
+            self.bossPhase+=1
             self.dead=False
-        if len(self.hpAll)>self.bosspPhase:
-            self.hp=self.hpAll[self.bosspPhase]
-            self.shotdata=self.shotdataAll[self.bosspPhase]
+        if len(self.hpAll)>self.bossPhase:
+            self.hp=self.hpAll[self.bossPhase]
+            self.timer=self.timerAll[self.bossPhase]
+            self.shotdata=self.shotdataAll[self.bossPhase]
         else:
             scene_change=self.nextStage
+
+class bossSpawner(GameObject):
+    def __init__(self,
+        bossEnemy:bossenemy,
+        spawnTime:float=0,
+        spawnDelay:float=0,
+    ):
+        self.bossenemy=bossEnemy
+        self.spawntime=spawnTime
+        self.spawndelay=spawnDelay
+        self.dead = False
+        self.noenemy = False
+        self.sprite=None
+    def update(self,dt):
+        global loaded_scene
+        self.noenemy = True
+        if self.spawntime<0:
+            for i in loaded_scene.objects:
+                if isinstance(i,enemy):
+                    self.noenemy = False
+            if self.noenemy:
+                if self.spawndelay<0:
+                    spawn(self.bossenemy)
+                    self.dead = True
+                else:
+                    self.spawndelay-=dt
+        else:
+            self.spawntime-=dt
 
 class image(GameObject):
     def __init__(self,x,y,path,rot=0):
