@@ -114,9 +114,9 @@ class Player(GameObject):
         self.sprite.rect = self.sprite.image.get_rect(center=(0, 0))
         self.diagonal_modifier = math.sqrt(2) / 2
         self.shotcooldown = 0
-        self.bulletimg = pygame.image.load("Sprites/Player Bullet 1.png")
+        self.bulletimg = pygame.image.load("Sprites/PlayerBullet.png")
         self.Laserimg = pygame.image.load(
-            "Sprites/Large Player Laser.png"
+            "Sprites/PlayerLaser.png"
         )
         self.v = Vector2(0, 400)
         self.vy = 0
