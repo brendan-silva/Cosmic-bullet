@@ -8,6 +8,10 @@ import math
 import copy
 Playermove = Vector2(0, 0)
 Playerlaseroff = True
+Playerlasercool = 0
+Playerhp=3
+PlayerEXcharge = 100
+
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
@@ -115,22 +119,37 @@ class Player(GameObject):
         self.diagonal_modifier = math.sqrt(2) / 2
         self.shotcooldown = 0
         self.bulletimg = pygame.image.load("Sprites/PlayerBullet.png")
-        self.Laserimg = pygame.image.load(
-            "Sprites/PlayerLaser.png"
-        )
+        self.Laserimg = pygame.image.load("Sprites/PlayerLaser.png")
+        self.Laserstartimg=pygame.image.load("Sprites/PlayerLaserStart.png")
+        self.missileimg =pygame.image.load("Sprites/PlayerMissile.png")
+        self.explosionimg =pygame.image.load("Sprites/PlayerExplosion.png")
+        self.bulletimgEX = pygame.image.load("Sprites/PlayerBulletEX.png")
+        self.LaserimgEX = pygame.image.load("Sprites/PlayerLaserEX.png")
+        self.LaserstartimgEX=pygame.image.load("Sprites/PlayerLaserStartEX.png")
+        self.missileimgEX =pygame.image.load("Sprites/PlayerMissileEX.png")
+        self.explosionimgEX =pygame.image.load("Sprites/PlayerExplosionEX.png")
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
         self.shottype = 0
+        self.shot_on= True
+        self.zhold = False
         self.xhold = False
-        self.hp = 3
+        self.chold = False
         self.hitcooldown = 0
         self.dead = False
         self.Bullethit=2
+        self.EXchargeON=False
 
     def update(self, dt):
+        global Playerlasercool
         global Playerlaseroff
         global Playermove
+        global PlayerEXcharge
+        if self.EXchargeON:
+            PlayerEXcharge-=dt*5
+        if PlayerEXcharge<0:
+                self.EXchargeON =False
         if self.hitcooldown >= 0:
             self.hitcooldown -= dt
             if self.hitcooldown <= 0:
@@ -161,53 +180,165 @@ class Player(GameObject):
         self.transform.pos += self.v * dt
         if self.shotcooldown >= 0:
             self.shotcooldown -= dt
-        if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 0:
-            for i in range(-3, 4):
-                spawn(
-                    Player_bullet(
-                        self.transform.pos + Vector2(4, 20),
-                        600,
-                        5 * i,
-                        self.bulletimg,
-                        1,
-                    )
-                )
-            self.shotcooldown += 0.2
-        if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 1:
-            if Playerlaseroff:
-                for i in range(0, 30):
+        
+        #shot types
+        if self.shot_on and self.shotcooldown <= 0 :
+            if not self.EXchargeON:
+                #dps roof of 60
+                if self.shottype == 0:
+                    for i in range(-3, 5):
+                        spawn(
+                            Player_bullet(
+                                self.transform.pos + Vector2(4, 20),
+                                600,
+                                (5 * i) - 2.5,
+                                self.bulletimg,
+                                1.50,
+                            )
+                        )
+                    self.shotcooldown += 0.2
+                #dps floor of 50
+                if self.shottype == 1:
+                    if Playerlaseroff:
+                        for i in range(0, 30):
+                            if i==0:
+                                spawn(
+                                    Player_laser(
+                                        self.transform.pos
+                                        + Vector2(0, 38 + (32 * i))
+                                        - Playermove * dt,
+                                        00,
+                                        0,
+                                        self.Laserstartimg,
+                                        10,
+                                    )
+                                )
+                            else:
+                                spawn(
+                                    Player_laser(
+                                        self.transform.pos
+                                        + Vector2(0, 38 + (32 * i))
+                                        - Playermove * dt,
+                                        00,
+                                        0,
+                                        self.Laserimg,
+                                        10,
+                                    )
+                                )
+                    Playerlaseroff = False
+                else:
+                    Playerlaseroff = True
+                #dps floor of 40
+                if self.shottype == 2:
                     spawn(
-                        Player_laser(
-                            self.transform.pos
-                            + Vector2(0, 38 + (32 * i))
-                            - Playermove * dt,
-                            00,
+                        Player_missile(
+                            self.transform.pos + Vector2(0, 20),
+                            300,
                             0,
-                            self.Laserimg,
-                            10,
+                            self.missileimg,
+                            self.explosionimg,
+                            6,
+                            2,
                         )
                     )
-            Playerlaseroff = False
-        else:
-            Playerlaseroff = True
-        if pressed_keys[K_x]:
-            if not self.xhold:
+                    self.shotcooldown += 0.2
+            #EXshot types
+            else:
+                #dps roof of 120
+                if self.shottype == 0:
+                    for i in range(-1, 3):
+                        spawn(
+                            Player_bulletEX(
+                                self.transform.pos + Vector2(4, 20),
+                                600,
+                                (10 * i) - 5,
+                                self.bulletimgEX,
+                                self.bulletimg,
+                                6,
+                            )
+                        )
+                    self.shotcooldown += 0.2
+                #dps floor of 100
+                if self.shottype == 1:
+                    if Playerlaseroff:
+                        for i in range(0, 30):
+                            if i==0:
+                                spawn(
+                                    Player_laser(
+                                        self.transform.pos
+                                        + Vector2(0, 38 + (32 * i))
+                                        - Playermove * dt,
+                                        00,
+                                        0,
+                                        self.LaserstartimgEX,
+                                        20,
+                                    )
+                                )
+                            else:
+                                spawn(
+                                    Player_laser(
+                                        self.transform.pos
+                                        + Vector2(0, 38 + (32 * i))
+                                        - Playermove * dt,
+                                        00,
+                                        0,
+                                        self.LaserimgEX,
+                                        20,
+                                    )
+                                )
+                    Playerlaseroff = False
+                else:
+                    Playerlaseroff = True
+                #dps floor of 80
+                if self.shottype == 2:
+                    spawn(
+                        Player_missile(
+                            self.transform.pos + Vector2(0, 20),
+                            300,
+                            0,
+                            self.missileimgEX,
+                            self.explosionimgEX,
+                            24,
+                            8,
+                        )
+                    )
+                    self.shotcooldown += 0.4
+        if pressed_keys[K_z]:
+            if not self.zhold:
                 self.shottype += 1
                 if self.shottype > 2:
                     self.shottype = 0
+            self.zhold = True
+        else:
+            self.zhold = False
+        if pressed_keys[K_x]:
+            if not self.xhold and (PlayerEXcharge>25 or not self.EXchargeON):
+                self.EXchargeON =not self.EXchargeON
+                Playerlaseroff = True
             self.xhold = True
         else:
             self.xhold = False
+        if PlayerEXcharge<0:
+                self.EXchargeON =False
+                Playerlaseroff = True
+        if pressed_keys[K_c]:
+            if not self.chold:
+                self.shot_on =not self.shot_on
+            self.chold = True
+        else:
+            self.chold = False
+
 
     def checkifhit(self,Bull):
+        global Playerhp
         if self.hitcooldown <= 0:
             if math.pow(self.transform.pos.x-Bull.transform.pos.x,2)+math.pow(self.transform.pos.y-Bull.transform.pos.y,2) <= math.pow(self.Bullethit+Bull.Bullethit,2):
-                self.hp -= 1
+                Playerhp -= 1
                 self.hitcooldown = 1
                 self.sprite.image = pygame.image.load(
                     "Sprites/Player hit.png"
                 )
-                if self.hp<=0:
+                if Playerhp<=0:
                     self.dead=True
 
 
@@ -228,20 +359,121 @@ class Player_bullet(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.dmg = dmg
         if self.sprite.rect.width > self.sprite.rect.height:
-            self.Bullethit = self.sprite.rect.width * 0.5
+            self.Bullethit = self.sprite.rect.width *0.8
         else:
-            self.Bullethit = self.sprite.rect.height * 0.5
+            self.Bullethit = self.sprite.rect.height *0.8
         self.dead = False
 
     def update(self, dt):
         self.transform.pos += self.v * dt
+        if abs(self.transform.pos.x)>500:
+            self.dead = True
+        elif abs(self.transform.pos.y)>500:
+            self.dead = True
+    
+    def hitenemy(self, other):
+        other.hp -= self.dmg 
+        self.dead = True
 
+class Player_bulletEX(Player_bullet):
+    def __init__(
+        self,
+        pos: Vector2,
+        speed: float,
+        ang: float,
+        image: pygame.image,
+        bulletimage: pygame.image,
+        dmg: float = 0,
+    ):
+        super().__init__(pos,speed,ang,image,dmg)
+        self.time=0
+        self.bulletimage=bulletimage
+    def update(self, dt):
+        Player_bullet.update(self,dt)
+        self.time+=dt
+        if self.time>=0.3:
+            for i in range(4):
+                spawn(Player_bullet(
+                    self.transform.pos+Vector2(0,0),
+                    600,
+                    self.transform.rotation-15+i*10,
+                    self.bulletimage,
+                    self.dmg/4
+                    ))
+            self.dead = True
+
+class Player_explosion(Player_bullet):
+    def __init__(
+        self,
+        pos: Vector2,
+        image: pygame.image,
+        dmg: float = 0,
+    ):
+        super().__init__(pos,0,0,image,dmg)
+        self.maxsize=self.sprite.rect.width*3
+        self.sprite.rect.width=1
+        self.sprite.rect.height=1
+        self.Bullethit = self.sprite.rect.width *0.9
+        self.enemieshit = []
+        self.imgPure=self.sprite.image
+        self.time=0.5
+        self.sprite.image=pygame.transform.scale(self.imgPure,(self.sprite.rect.width,self.sprite.rect.height))
+    def update(self, dt):
+        self.time+=dt
+        if self.time>3.5:
+            self.dead = True
+        self.sprite.rect.width=self.maxsize*(1-1/(self.time*2))
+        self.sprite.rect.height=self.maxsize*(1-1/(self.time*2))
+        self.sprite.image=pygame.transform.scale(self.imgPure,(self.sprite.rect.width,self.sprite.rect.height))
+    def hitenemy(self, other):
+        if not other in self.enemieshit:
+            other.hp -= self.dmg 
+            self.enemieshit.append(other)
+
+class Player_missile(Player_bullet):
+    def __init__(
+        self,
+        pos: Vector2,
+        speed: float,
+        ang: float,
+        image: pygame.image,
+        explosionimage:pygame.image=None,
+        dmg: float = 0,
+        explosiondmg: float = 0
+    ):
+        super().__init__(pos,speed,ang,image,dmg)
+        self.explosionimage=explosionimage
+        self.explosiondmg=explosiondmg
+        self.aim=Vector2(0,1000)
+    def update(self, dt):
+        loaded_scene
+        self.aim=Vector2(1000,1000)
+        Player_bullet.update(self,dt)
+        for e in loaded_scene.objects:
+            if isinstance(e,enemy):
+                if Vector2.magnitude_squared(self.transform.pos-e.transform.pos)<self.aim.magnitude_squared():
+                    self.aim=e.transform.pos-self.transform.pos
+            if not self.aim==Vector2(1000,1000):
+                self.v+=(self.aim.normalize()*dt*10)-(self.v.normalize()*dt*5)
+            self.transform.rotation=-self.v.angle_to(Vector2(0,1))
+    def hitenemy(self, other):
+        Player_bullet.hitenemy(self, other)
+        spawn(Player_explosion(self.transform.pos+Vector2(0,0),self.explosionimage,self.explosiondmg))
 
 class Player_laser(Player_bullet):
     def update(self, dt):
         global Playermove
         self.transform.pos += self.v * dt + Playermove * dt
+    
+    def hitenemy(self, other):
+        global Playerlasercool
+        if Playerlasercool == 0.25:
+            other.hp -= self.dmg/10
+        elif Playerlasercool<= 0:
+            Playerlasercool=0.25
+            other.hp -= self.dmg
 
+        Playerlasercool=0.20
 
 class Bullet(GameObject):
     def __init__(
@@ -272,7 +504,6 @@ class Bullet(GameObject):
             self.dead = True
         elif abs(self.transform.pos.y)>500:
             self.dead = True
-
 
 class shotdata:
     def __init__(
@@ -436,18 +667,14 @@ class enemy(GameObject):
         self.v += self.a * dt
         for x in self.shotdata:
             x.update(dt, self.transform)
+        if abs(self.transform.pos.x)>500:
+            self.dead = True
+        elif abs(self.transform.pos.y)>500:
+            self.dead = True
     
     def checkifhit(self,Object):
         if math.pow(self.transform.pos.x-Object.transform.pos.x,2)+math.pow(self.transform.pos.y-Object.transform.pos.y,2) <= math.pow(self.Bullethit+Object.Bullethit,2):
-            if isinstance(Object,Player_laser):
-                if self.hitcooldown == 0.25:
-                    self.hp-= Object.dmg*0.2
-                elif self.hitcooldown <=0 :
-                    self.hp-= Object.dmg
-                    self.hitcooldown = 0.25
-            else:
-                self.hp -= Object.dmg
-                Object.dead=True
+            Object.hitenemy(self)
             if self.hp<=0:
                 self.dead=True
 
@@ -470,8 +697,7 @@ class bossenemy(enemy):
         self.nextStage=nextStage
     def update(self, dt):
         global scene_change
-        if self.hitcooldown >= 0:
-            self.hitcooldown -= dt
+
         self.timer -= dt
         
         if self.timer <= 0:
@@ -494,12 +720,12 @@ class bossenemy(enemy):
         if self.dead:
             self.bossPhase+=1
             self.dead=False
-        if len(self.hpAll)>self.bossPhase:
-            self.hp=self.hpAll[self.bossPhase]
-            self.timer=self.timerAll[self.bossPhase]
-            self.shotdata=self.shotdataAll[self.bossPhase]
-        else:
-            scene_change=self.nextStage
+            if len(self.hpAll)>self.bossPhase:
+                self.hp=self.hpAll[self.bossPhase]
+                self.timer=self.timerAll[self.bossPhase]
+                self.shotdata=self.shotdataAll[self.bossPhase]
+            else:
+                scene_change=self.nextStage
 
 class bossSpawner(GameObject):
     def __init__(self,
@@ -623,7 +849,8 @@ def render(game_object: GameObject, screen: pygame.Surface,):
         rect = rect_from_hitbox_and_pos(screen_pos, sprite.rect)
         screen.blit(
             pygame.transform.rotate(
-                game_object.sprite.image, -game_object.transform.rotation
+                game_object.sprite.image,
+                -game_object.transform.rotation
             ),
             rect,
         )

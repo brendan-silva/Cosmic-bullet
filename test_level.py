@@ -70,7 +70,7 @@ def stage_1() -> Scene:
                     [0, 7, 0, 0],
                 )
             ],
-            10
+            600
         ),
     )
     return new_scene
@@ -88,22 +88,22 @@ def stage_2() -> Scene:
             0.5,
             2,
             [0,0,0,0],
-            [0,10,0,0],
-            1,
+            [0,72,0,0],
+            5,
             [
                 shotdata(
                     Transform2D(0, 0, 0),
                     pygame.image.load("Sprites\Enemy Bullet 1.png"),
-                    [00, 0],
+                    [100, 0],
                     [0, 0],
-                    100,
+                    1,
                     0.1,
                     0,
                     [0, 0, 0, 0],
-                    [0, 0, 0, 11],
+                    [0, 11, 0, 0],
                 )
             ],
-            10
+            100
         ),
     )
     return new_scene
