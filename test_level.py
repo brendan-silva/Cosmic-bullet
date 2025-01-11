@@ -70,7 +70,8 @@ def stage_1() -> Scene:
                     [0, 7, 0, 0],
                 )
             ],
-            600
+            100,
+            [0,0,321,100]
         ),
     )
     return new_scene

@@ -6,17 +6,32 @@ import pygame
 from typing_extensions import Self
 import math
 import copy
+import random
 Playermove = Vector2(0, 0)
 Playerlaseroff = True
 Playerlasercool = 0
 Playerhp=3
+Playerscrap=0
 PlayerEXcharge = 100
-
+Score=0
+itemimage=[[pygame.image.load("Sprites\items\itemEnergy1.png"),
+            pygame.image.load("Sprites\items\itemEnergy10.png"),
+            pygame.image.load("Sprites\items\itemEnergy100.png")
+            ],[
+            pygame.image.load("Sprites\items\itemScrap1.png"),
+            pygame.image.load("Sprites\items\itemScrap10.png"),
+            pygame.image.load("Sprites\items\itemScrap100.png")
+            ],[
+            pygame.image.load("Sprites\items\itemStar1.png"),
+            pygame.image.load("Sprites\items\itemStar10.png"),
+            pygame.image.load("Sprites\items\itemStar100.png"),
+            ]]
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
 DARKBLUE = (35,33,87)
 LIGHTBLUE = (79,90,154)
+
 
 scene_lib = {}
 scene_change = None
@@ -156,6 +171,7 @@ class Player(GameObject):
                 self.sprite.image = pygame.image.load(
                     "Sprites/Player.png"
                 )
+        Playerlasercool-=dt
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
@@ -467,13 +483,67 @@ class Player_laser(Player_bullet):
     
     def hitenemy(self, other):
         global Playerlasercool
-        if Playerlasercool == 0.25:
+        if Playerlasercool == 0.20:
             other.hp -= self.dmg/10
         elif Playerlasercool<= 0:
-            Playerlasercool=0.25
+            Playerlasercool=0.20
             other.hp -= self.dmg
 
         Playerlasercool=0.20
+
+class item(GameObject):
+    #type(0=Energy,1=Scrap,2=Star)
+    def __init__(
+        self,
+        pos: Vector2,
+        image: pygame.image,
+        potency: int = 1,
+        itemtype:int=0
+    ):
+        self.transform = Transform2D(pos.x, pos.y, 0)
+        self.v = pygame.Vector2(0, -150)
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = image
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.potency = potency
+        self.itemtype = itemtype
+        self.itemget = (self.sprite.rect.width *1.4)**2
+        self.followplayer=False
+        self.dead = False
+    def update(self, dt):
+        global loaded_scene
+        global Playerscrap
+        global PlayerEXcharge
+        global Score
+        if self.followplayer:
+            self.transform.pos+=pygame.Vector2.normalize(loaded_scene.player.transform.pos-self.transform.pos)*dt*400
+            if pygame.Vector2.magnitude_squared(loaded_scene.player.transform.pos-self.transform.pos)<self.itemget:
+                if self.itemtype==0:
+                    PlayerEXcharge+=self.potency
+                elif self.itemtype==1:
+                    Playerscrap+=self.potency
+                else:
+                    Score+=self.potency
+                self.dead = True
+        else:
+            self.transform.pos+=self.v*dt
+            if pygame.Vector2.magnitude_squared(loaded_scene.player.transform.pos-self.transform.pos)<100**2 or loaded_scene.player.transform.pos.y >216:
+                self.followplayer = True
+
+def itemgroupspawn(pos: Vector2,itemvalues:list[int]=[0,0,0],area:float=0):
+    itemtype=0
+    itemscale=2
+    while itemvalues!=[0,0,0]:
+        while itemvalues[itemtype]<10**itemscale:
+            if itemscale == 0:
+                itemscale=2
+                itemtype+=1
+            else:
+                itemscale-=1
+        spawn(item(pos+pygame.Vector2.rotate(pygame.Vector2(0,random.randrange(0 ,area)),random.randrange(0,360)),
+                itemimage[itemtype][itemscale],
+                10**itemscale))
+        itemvalues[itemtype]-=10**itemscale
 
 class Bullet(GameObject):
     def __init__(
@@ -576,7 +646,8 @@ class wavedata(GameObject):
         incrementchange: list[float, float, float, float] = [0, 0, 0, 0],
         incrementcap: int = 1,
         shotdata:list[shotdata]=None,
-        hp:float=1
+        hp:float=1,
+        itemdata:list[int,int,int,float]=[0,0,0,0]
     ):
         self.sprite=None
         self.transform = transformation
@@ -594,6 +665,7 @@ class wavedata(GameObject):
         self.shotdata=shotdata
         self.hp=hp
         self.aaaa=[]
+        self.itemdata=itemdata
 
 
     def update(self, dt,):
@@ -625,7 +697,8 @@ class wavedata(GameObject):
                             + self.i * self.incrementchange[3],
                         ],
                         self.hp,
-                        self.aaaa
+                        self.aaaa,
+                        self.itemdata
                     )
                 )
             self.shotcooldown += self.shotrate
@@ -642,6 +715,7 @@ class enemy(GameObject):
         a: list[float, float] = [0, 0],
         hp: float = 1,
         shotdata: list[shotdata] = None,
+        itemdata:list[int,int,int,float]=[0,0,0,0]
     ):
         self.transform = transformation
         self.sprite = pygame.sprite.Sprite()
@@ -653,6 +727,7 @@ class enemy(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.shotdata = shotdata
         self.hp = hp
+        self.itemdata=itemdata
         if self.sprite.rect.width > self.sprite.rect.height:
             self.Bullethit = self.sprite.rect.width * 0.5
         else:
@@ -677,6 +752,8 @@ class enemy(GameObject):
             Object.hitenemy(self)
             if self.hp<=0:
                 self.dead=True
+                itemgroupspawn(self.transform.pos,self.itemdata[0:3],self.itemdata[3])
+                self.itemdata=[0,0,0,0]
 
 class bossenemy(enemy):
     def __init__(
@@ -686,13 +763,15 @@ class bossenemy(enemy):
         nextStage:str,
         hpAll:list[float]=[0],
         timerAll:list[float]=[0],
-        shotdataAll:list[list[shotdata]]=[None]
+        shotdataAll:list[list[shotdata]]=[None],
+        itemdataAll:list[list[int,int,int,float]]=[[0,0,0,0]]
         ):
-        super().__init__(transformation,image,[0,0],[0,0],hpAll[0],shotdataAll[0])
+        super().__init__(transformation,image,[0,0],[0,0],hpAll[0],shotdataAll[0],itemdataAll[0])
         self.hpAll=hpAll
         self.timerAll=timerAll
         self.timer=timerAll[0]
         self.shotdataAll=shotdataAll
+        self.itemdataAll=itemdataAll
         self.bossPhase=0
         self.nextStage=nextStage
     def update(self, dt):
@@ -724,6 +803,7 @@ class bossenemy(enemy):
                 self.hp=self.hpAll[self.bossPhase]
                 self.timer=self.timerAll[self.bossPhase]
                 self.shotdata=self.shotdataAll[self.bossPhase]
+                self.itemdata=self.itemdataAll[self.bossPhase]
             else:
                 scene_change=self.nextStage
 
