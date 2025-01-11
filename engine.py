@@ -202,7 +202,7 @@ class Player(GameObject):
         #shot types
         if self.shot_on and self.shotcooldown <= 0 :
             if not self.EXchargeON:
-                #dps roof of 60
+                #dps roof of 70
                 if self.shottype == 0:
                     for i in range(-3, 5):
                         spawn(
@@ -211,7 +211,7 @@ class Player(GameObject):
                                 600,
                                 (5 * i) - 2.5,
                                 self.bulletimg,
-                                1.50,
+                                1.75,
                             )
                         )
                     self.shotcooldown += 0.2
@@ -262,7 +262,7 @@ class Player(GameObject):
                     self.shotcooldown += 0.2
             #EXshot types
             else:
-                #dps roof of 120
+                #dps roof of 140
                 if self.shottype == 0:
                     for i in range(-1, 3):
                         spawn(
@@ -272,7 +272,7 @@ class Player(GameObject):
                                 (10 * i) - 5,
                                 self.bulletimgEX,
                                 self.bulletimg,
-                                6,
+                                7,
                             )
                         )
                     self.shotcooldown += 0.2
