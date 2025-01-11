@@ -7,6 +7,7 @@ import engine
 def stage_1() -> Scene:
     new_scene = Scene(
         Player(),
+        BarWithText((255, 0, 0), (255, 255, 255), 100, 100, 300, 30, 550, 400, 450, 400, 72),
         bossSpawner(
         bossenemy(
             Transform2D(0, 300, 0),
