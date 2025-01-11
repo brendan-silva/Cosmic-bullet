@@ -78,7 +78,9 @@ class GameObject(metaclass=ABCMeta):
         by all subclasses or it's functionally duplicated in the subclasses
         constructor.
         """
-        self.transform = Transform2D()
+        self.transform = Transform2D(0, 0, 0)
+        self.sprite = None
+        self.dead = False
 
     @abstractmethod
     def update(self, dt: float):
@@ -785,6 +787,75 @@ class textobject(GameObject):
         if recenter:
             self.sprite.rect.center = self.center
 
+
+class Bar(GameObject):
+    def __init__(self, colour, current_value, max_value, length, width, x, y):
+        super().__init__()
+        self.transform = Transform2D(x, y, 0)
+        self.colour = colour
+        self.current_value = current_value
+        self.max_value = max_value
+        self.length = length
+        self.width = width
+        self.sprite = Sprite()
+        self.sprite.image = pygame.Surface([length, width])
+        self.sprite.image.fill(self.colour)
+        self.sprite.rect = self.sprite.image.get_rect()
+
+    def update(self, dt):
+        pressed_keys = pygame.key.get_pressed()
+
+        length = self.length * (self.current_value/self.max_value)
+        self.sprite.image = pygame.transform.scale(self.sprite.image, (length, self.width));
+
+    def set_value(self, amount):
+        self.current_value = amount
+        if self.callback is not None:
+            self.callback(str(self.current_value))
+
+    def increase(self, amount):
+        self.current_value += amount
+        if self.callback is not None:
+            self.callback(str(self.current_value))
+
+    def decrease(self, amount):
+        self.current_value -= amount
+        if self.callback is not None:
+            self.callback(str(self.current_value))
+
+    def register_callback(self, callback):
+        self.callback = callback
+
+
+class BarWithText(GameObject):
+    bar: Bar
+    text: textobject
+
+    def __init__(self, colour, text_colour, current_value, max_value, length, width, bar_x, bar_y, text_x, text_y, text_size):
+        super().__init__()
+        self.bar = Bar(colour, current_value, max_value, length, width, bar_x, bar_y)
+        self.text = textobject(text_x, text_y, str(current_value), text_colour, text_size)
+        self.bar.register_callback(self.text.changetext)
+        self.first = True
+
+    def update(self, dt):
+        if self.first:
+            spawn(self.bar)
+            spawn(self.text)
+            self.first = False
+        self.bar.update(dt)
+        self.text.update(dt)
+
+    def set_value(self, amount):
+        self.bar.set_value(amount)
+
+    def increase(self, amount):
+        self.bar.increase(amount)
+
+    def decrease(self, amount):
+        self.bar.decrease(amount)
+
+
 class button(GameObject):
     def __init__(self,x,y,scene,text="",quitbutton=False):
         self.sprite = pygame.sprite.Sprite()
@@ -899,7 +970,7 @@ def main(loading: str, lib: dict):
                 game_loop = False
             if event.type == MOUSEBUTTONDOWN:
                 mousedown = True
-                
+
         for game_object in loaded_scene.objects:
             # if game_object.deload:
             # #     del game_object
