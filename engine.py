@@ -269,10 +269,7 @@ class Bullet(GameObject):
     def update(self, dt):
         self.transform.pos += self.v * dt
         self.v += self.a * dt
-        if abs(self.transform.pos.x)>500:
-            self.dead = True
-        elif abs(self.transform.pos.y)>500:
-            self.dead = True
+        
 
 
 class shotdata:
