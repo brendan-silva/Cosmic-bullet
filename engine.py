@@ -381,6 +381,7 @@ class Player_bullet(GameObject):
         else:
             self.Bullethit = self.sprite.rect.height *0.8
         self.dead = False
+        self.EX=loaded_scene.player.EXchargeON
 
     def update(self, dt):
         self.transform.pos += self.v * dt
@@ -409,7 +410,7 @@ class Player_bulletEX(Player_bullet):
     def update(self, dt):
         Player_bullet.update(self,dt)
         self.time+=dt
-        if self.time>=0.3:
+        if self.time>=0.5:
             for i in range(4):
                 spawn(Player_bullet(
                     self.transform.pos+Vector2(0,0),
@@ -419,6 +420,9 @@ class Player_bulletEX(Player_bullet):
                     self.dmg/4
                     ))
             self.dead = True
+    def hitenemy(self, other):
+        Player_bullet.hitenemy(self, other)
+        itemgroupspawn(self.transform.pos,[2,0,0],10)
 
 class Player_explosion(Player_bullet):
     def __init__(
@@ -477,21 +481,26 @@ class Player_missile(Player_bullet):
     def hitenemy(self, other):
         Player_bullet.hitenemy(self, other)
         spawn(Player_explosion(self.transform.pos+Vector2(0,0),self.explosionimage,self.explosiondmg))
+        if self.EX:
+                itemgroupspawn(self.transform.pos,[0,3,0],10)
 
 class Player_laser(Player_bullet):
     def update(self, dt):
-        global Playermove
         self.transform.pos += self.v * dt + Playermove * dt
     
     def hitenemy(self, other):
         global Playerlasercool
         if Playerlasercool == 0.20:
             other.hp -= self.dmg/10
+            if loaded_scene.player.EXchargeON:
+                itemgroupspawn(self.transform.pos,[0,0,1],10)
         elif Playerlasercool<= 0:
             Playerlasercool=0.20
             other.hp -= self.dmg
+            if self.EX:
+                itemgroupspawn(self.transform.pos,[0,0,10],10)
+            
 
-        Playerlasercool=0.20
 
 class item(GameObject):
     #type(0=Energy,1=Scrap,2=Star)
@@ -533,6 +542,7 @@ class item(GameObject):
                 self.followplayer = True
 
 def itemgroupspawn(pos: Vector2,itemvalues:list[int]=[0,0,0],area:float=0):
+    #type(0=Energy,1=Scrap,2=Star)
     itemtype=0
     itemscale=2
     while itemvalues!=[0,0,0]:
@@ -568,6 +578,7 @@ class Bullet(GameObject):
         else:
             self.Bullethit = self.sprite.rect.height * 0.5
         self.dead = False
+
 
     def update(self, dt):
         self.transform.pos += self.v * dt
