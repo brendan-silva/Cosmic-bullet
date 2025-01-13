@@ -981,8 +981,8 @@ class button(GameObject):
     def __init__(self,x,y,scene,text="",quitbutton=False):
         self.sprite = pygame.sprite.Sprite()
         self.transform = Transform2D(x,y,0)
-        self.enabled = pygame.image.load("Cosmic-bullet\Sprites\Button(1B).png")
-        self.disabled = pygame.image.load("Cosmic-bullet\Sprites\Button(2B).png")
+        self.enabled = pygame.image.load("Sprites\Button(1).png")
+        self.disabled = pygame.image.load("Sprites\Button(2).png")
         self.type = textobject(0,0,text,DARKBLUE)
         self.text = text
         self.update_sprite(self.enabled,DARKBLUE)
@@ -1063,7 +1063,8 @@ def render(game_object: GameObject, screen: pygame.Surface,):
         rect = rect_from_hitbox_and_pos(screen_pos, sprite.rect)
         screen.blit(
             pygame.transform.rotate(
-                game_object.sprite.image, -game_object.transform.rotation
+                game_object.sprite.image,
+                -game_object.transform.rotation
             ),
             rect,
         )
@@ -1112,7 +1113,7 @@ def main(loading: str, lib: dict):
                 game_loop = False
             if event.type == MOUSEBUTTONDOWN:
                 mousedown = True
-                
+
         for game_object in loaded_scene.objects:
             # if game_object.deload:
             # #     del game_object
