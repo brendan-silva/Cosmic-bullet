@@ -75,6 +75,9 @@ def stage_1() -> Scene:
             1000,
             [111,111,111,100]
         ),
+        statusbar(-555,216),
+        sidebar(-324,432,"Cosmic-bullet\Sprites\sidebar.png"),
+        sidebar(768,432,"Cosmic-bullet\Sprites\sidebar.png")
     )
     return new_scene
 
@@ -91,8 +94,8 @@ def stage_2() -> Scene:
             0.5,
             2,
             [0,0,0,0],
-            [0,72,0,0],
-            5,
+            [0,10,0,0],
+            100,
             [
                 shotdata(
                     Transform2D(0, 0, 0),
@@ -108,6 +111,9 @@ def stage_2() -> Scene:
             ],
             100
         ),
+        statusbar(-555,216),
+        sidebar(-324,432,"Cosmic-bullet\Sprites\sidebar.png"),
+        sidebar(768,432,"Cosmic-bullet\Sprites\sidebar.png")
     )
     return new_scene
 
@@ -115,7 +121,16 @@ def stage_2() -> Scene:
 def main_menu() -> Scene:
     new_scene = Scene(
         #textobject(0,0,"Test",WHITE)
-        button(0,0,"stage_2","New Game",False)
+        button(0,0,"stage_2","New Game",False),
+        image(0,100,"Cosmic-bullet\Sprites\Player Laser.png")
+    )
+    return new_scene
+
+def test() -> Scene:
+    new_scene = Scene(
+        statusbar(-555,216),
+        background(-324,432,"Cosmic-bullet\Sprites\sidebar.png"),
+        background(768,432,"Cosmic-bullet\Sprites\sidebar.png")
     )
     return new_scene
 

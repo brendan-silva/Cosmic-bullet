@@ -32,7 +32,6 @@ WHITE = (255, 255, 255)
 DARKBLUE = (35,33,87)
 LIGHTBLUE = (79,90,154)
 
-
 scene_lib = {}
 scene_change = None
 loaded_scene = None
@@ -180,13 +179,13 @@ class Player(GameObject):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LSHIFT]:
             self.v = self.v / 2
-        if pressed_keys[K_UP]:
+        if pressed_keys[K_UP] and not self.transform.pos[1] > 422:
             self.vy += 1
-        if pressed_keys[K_DOWN]:
+        if pressed_keys[K_DOWN] and not self.transform.pos[1] < -422:
             self.vy -= 1
-        if pressed_keys[K_LEFT]:
+        if pressed_keys[K_LEFT] and not self.transform.pos[0] > 314:
             self.vx -= 1
-        if pressed_keys[K_RIGHT]:
+        if pressed_keys[K_RIGHT] and not self.transform.pos[0] < -314:
             self.vx += 1
         if not self.vy == 0:
             self.v = self.v.rotate(90 - self.vy * 90 + self.vx * self.vy * 45)
@@ -196,6 +195,8 @@ class Player(GameObject):
             self.v = Vector2(0, 0)
         Playermove = self.v
         self.transform.pos += self.v * dt
+
+        
         if self.shotcooldown >= 0:
             self.shotcooldown -= dt
         
@@ -848,17 +849,46 @@ class bossSpawner(GameObject):
         else:
             self.spawntime-=dt
 
-class image(GameObject):
-    def __init__(self,x,y,path,rot=0):
+class background(GameObject):
+    def __init__(self,x,y,path,scroll=0):
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = pygame.image.load(path)
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.transform = Transform2D(x-self.sprite.rect.width/2,y-self.sprite.rect.height/2,0)
+        self.dead = False
+        self.scroll = scroll
+    def update(self,dt):
+        if self.scroll > 0:
+            if self.transform.pos[1] <= 0:
+                self.transform.pos += (0,432)
+            self.transform.pos -= (0,self.scroll)
+
+class sidebar(GameObject):
+    def __init__(self,x,y,path,scroll=0):
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = pygame.image.load(path)
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.transform = Transform2D(x-self.sprite.rect.width/2,y-self.sprite.rect.height/2,0)
+        self.dead = False
+    def update(self,dt):
+        pass     
+                
+class UI(GameObject):
+    pass
+    
+class image(UI):
+    def __init__(self,x,y,path,rotV=0,rot=0):
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.image.load(path)
         self.sprite.rect = self.sprite.image.get_rect()
         self.transform = Transform2D(x,y,0)
         self.dead = False
+        self.rot = rot
+        self.rotV = rotV
     def update(self,dt):
-        self.transform.rotation = rot*math.sin(dt)
+        self.transform.rotation += self.rotV
 
-class textobject(GameObject):
+class textobject(UI):
     def __init__(self,x,y,text,colour,size=72):
         pygame.font.init()
         self.font = pygame.font.Font(None, size)
@@ -978,6 +1008,28 @@ class button(GameObject):
                 scene_change = self.scene
         else:
             self.update_sprite(self.enabled,DARKBLUE)
+            
+class statusbar(UI):
+    def __init__(self,x,y,maxval=200,baseval=0,folder="defaultbar"):
+        self.transform = Transform2D(x,y,0)
+        self.sprite = pygame.sprite.Sprite()
+        self.root = folder
+        self.image = pygame.surface.Surface((273,96))
+        self.icon = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\Icon.png"),3)
+        self.bg = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\BG.png"),3)
+        self.bar = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\Bar.png"),3)
+        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))]) 
+        self.sprite.image = self.image
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.val = baseval
+        self.max = maxval
+        self.dead = False
+    def update(self,dt):
+        if self.val < self.max:
+            self.val += 1
+        self.bar = pygame.transform.scale(self.bar,(math.ceil(180*(self.val/self.max)),54))
+        self.image.fill((164,111,43))
+        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))])
 
     #objects: list[GameObject]
 
@@ -1073,8 +1125,26 @@ def main(loading: str, lib: dict):
                 lambda game_obj: game_object.sprite is not None, loaded_scene.objects
             )
         )
+        object_matrix = [[],[],[],[],[],[],[]]
         for game_object in game_objects_with_sprites:
-            render(game_object, screen)
+            if isinstance(game_object,background):
+                object_matrix[0].append(game_object)
+            elif isinstance(game_object,enemy):
+                object_matrix[1].append(game_object)
+            elif isinstance(game_object,Player):
+                object_matrix[2].append(game_object)
+            elif isinstance(game_object,Bullet):
+                object_matrix[3].append(game_object)
+            elif isinstance(game_object,Player_bullet):
+                object_matrix[4].append(game_object)
+            elif isinstance(game_object,sidebar):
+                object_matrix[5].append(game_object)
+            elif isinstance(game_object,UI):
+                object_matrix[6].append(game_object)
+        for array in object_matrix:
+            for item in array:
+                render(item, screen)
+            
         i = 0
         for b in loaded_scene.objects:
             if isinstance(b, Bullet):
