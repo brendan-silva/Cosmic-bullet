@@ -1113,7 +1113,7 @@ def main(loading: str, lib: dict):
                 game_loop = False
             if event.type == MOUSEBUTTONDOWN:
                 mousedown = True
-
+                
         for game_object in loaded_scene.objects:
             # if game_object.deload:
             # #     del game_object
