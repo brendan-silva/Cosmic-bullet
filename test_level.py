@@ -48,6 +48,16 @@ def stage_1() -> Scene:
         10,
         5,
         ),
+        statusbar(-555,216),
+        sidebar(-324,432,"Sprites\sidebar.png"),
+        sidebar(768,432,"Sprites\sidebar.png")
+    )
+    return new_scene
+
+
+def stage_2() -> Scene:
+    new_scene = Scene(
+        Player(),
         wavedata(
             Transform2D(0, 300, 0),
             pygame.image.load("Sprites/Enemy.png"),
@@ -58,7 +68,7 @@ def stage_1() -> Scene:
             2,
             [0,0,0,0],
             [0,10,0,0],
-            1,
+            100,
             [
                 shotdata(
                     Transform2D(0, 0, 0),
@@ -112,26 +122,18 @@ def stage_2() -> Scene:
             100
         ),
         statusbar(-555,216),
-        sidebar(-324,432,"Cosmic-bullet\Sprites\sidebar.png"),
-        sidebar(768,432,"Cosmic-bullet\Sprites\sidebar.png")
+        sidebar(-324,432,"Sprites\sidebar.png"),
+        sidebar(768,432,"Sprites\sidebar.png")
     )
     return new_scene
 
-
-def main_menu() -> Scene:
-    new_scene = Scene(
-        #textobject(0,0,"Test",WHITE)
-        button(0,0,"stage_2","New Game",False),
-        image(0,100,"Cosmic-bullet\Sprites\Player Laser.png")
-    )
-    return new_scene
 
 def test() -> Scene:
     new_scene = Scene(
         statusbar(-555,216),
-        background(-324,432,"Cosmic-bullet\Sprites\sidebar.png"),
-        background(768,432,"Cosmic-bullet\Sprites\sidebar.png")
+        background(-324,432,"Sprites\sidebar.png"),
+        background(768,432,"Sprites\sidebar.png")
     )
     return new_scene
 
-main('stage_1',lib={'stage_1':stage_1(),'stage_2':stage_2(),'main_menu':main_menu()})
+main('stage_1',lib={'test':test(),'stage_1':stage_1(),'stage_2':stage_2(),'main_menu':main_menu()})
