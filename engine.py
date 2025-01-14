@@ -6,13 +6,34 @@ import pygame
 from typing_extensions import Self
 import math
 import copy
+import random
 Playermove = Vector2(0, 0)
 Playerlaseroff = True
+Playerlasercool = 0
+Playerhp=999#3
+Playerscrap=0
+PlayerEXcharge = 50
+Score=0
+itemimage=[[pygame.image.load("Sprites\items\itemEnergy1.png"),
+            pygame.image.load("Sprites\items\itemEnergy10.png"),
+            pygame.image.load("Sprites\items\itemEnergy100.png")
+            ],[
+            pygame.image.load("Sprites\items\itemScrap1.png"),
+            pygame.image.load("Sprites\items\itemScrap10.png"),
+            pygame.image.load("Sprites\items\itemScrap100.png")
+            ],[
+            pygame.image.load("Sprites\items\itemStar1.png"),
+            pygame.image.load("Sprites\items\itemStar10.png"),
+            pygame.image.load("Sprites\items\itemStar100.png"),
+            ]]
 WIDTH = 1536
 HEIGHT = 864
 WHITE = (255, 255, 255)
 DARKBLUE = (35,33,87)
 LIGHTBLUE = (79,90,154)
+TEST = (255,0,0)
+
+
 scene_lib = {}
 scene_change = None
 loaded_scene = None
@@ -73,7 +94,9 @@ class GameObject(metaclass=ABCMeta):
         by all subclasses or it's functionally duplicated in the subclasses
         constructor.
         """
-        self.transform = Transform2D()
+        self.transform = Transform2D(0, 0, 0)
+        self.sprite = None
+        self.dead = False
 
     @abstractmethod
     def update(self, dt: float):
@@ -109,33 +132,51 @@ class Player(GameObject):
     def __init__(self):
         self.transform = Transform2D(0, 0, 0)
         self.sprite = pygame.sprite.Sprite()
-        self.sprite.image = pygame.image.load("Cosmic-bullet/Sprites/Player.png")
+        self.sprite.image = pygame.image.load("Sprites/Player.png")
         self.sprite.rect = self.sprite.image.get_rect(center=(0, 0))
         self.diagonal_modifier = math.sqrt(2) / 2
         self.shotcooldown = 0
-        self.bulletimg = pygame.image.load("Cosmic-bullet/Sprites/Player Bullet 1.png")
-        self.Laserimg = pygame.image.load(
-            "Cosmic-bullet/Sprites/Large Player Laser.png"
-        )
+        self.bulletimg = pygame.image.load("Sprites/PlayerBullet.png")
+        self.Laserimg = pygame.image.load("Sprites/PlayerLaser.png")
+        self.Laserstartimg=pygame.image.load("Sprites/PlayerLaserStart.png")
+        self.missileimg =pygame.image.load("Sprites/PlayerMissile.png")
+        self.explosionimg =pygame.image.load("Sprites/PlayerExplosion.png")
+        self.bulletimgEX = pygame.image.load("Sprites/PlayerBulletEX.png")
+        self.LaserimgEX = pygame.image.load("Sprites/PlayerLaserEX.png")
+        self.LaserstartimgEX=pygame.image.load("Sprites/PlayerLaserStartEX.png")
+        self.missileimgEX =pygame.image.load("Sprites/PlayerMissileEX.png")
+        self.explosionimgEX =pygame.image.load("Sprites/PlayerExplosionEX.png")
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
         self.shottype = 0
+        self.shot_on= True
+        self.zhold = False
         self.xhold = False
-        self.hp = 3
+        self.chold = False
         self.hitcooldown = 0
         self.dead = False
         self.Bullethit=2
+        self.EXchargeON=False
 
     def update(self, dt):
+        global Playerlasercool
         global Playerlaseroff
         global Playermove
+        global PlayerEXcharge
+        if self.EXchargeON:
+            PlayerEXcharge-=dt*25
+        elif PlayerEXcharge < 125:
+            PlayerEXcharge+=dt*5
+        if PlayerEXcharge<0:
+                self.EXchargeON =False
         if self.hitcooldown >= 0:
             self.hitcooldown -= dt
             if self.hitcooldown <= 0:
                 self.sprite.image = pygame.image.load(
-                    "Cosmic-bullet/Sprites/Player.png"
+                    "Sprites/Player.png"
                 )
+        Playerlasercool-=dt
         self.v = Vector2(0, 400)
         self.vy = 0
         self.vx = 0
@@ -158,57 +199,167 @@ class Player(GameObject):
             self.v = Vector2(0, 0)
         Playermove = self.v
         self.transform.pos += self.v * dt
-
-        
         if self.shotcooldown >= 0:
             self.shotcooldown -= dt
-        if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 0:
-            for i in range(-3, 4):
-                spawn(
-                    Player_bullet(
-                        self.transform.pos + Vector2(4, 20),
-                        600,
-                        5 * i,
-                        self.bulletimg,
-                        1,
-                    )
-                )
-            self.shotcooldown += 0.2
-        if pressed_keys[K_z] and self.shotcooldown <= 0 and self.shottype == 1:
-            if Playerlaseroff:
-                for i in range(0, 30):
+        
+        #shot types
+        if self.shot_on and self.shotcooldown <= 0 :
+            if not self.EXchargeON:
+                #dps roof of 70
+                if self.shottype == 0:
+                    for i in range(-3, 5):
+                        spawn(
+                            Player_bullet(
+                                self.transform.pos + Vector2(4, 20),
+                                600,
+                                (5 * i) - 2.5,
+                                self.bulletimg,
+                                1.75,
+                            )
+                        )
+                    self.shotcooldown += 0.2
+                #dps floor of 50
+                if self.shottype == 1:
+                    if Playerlaseroff:
+                        for i in range(0, 30):
+                            if i==0:
+                                spawn(
+                                    Player_laser(
+                                        self.transform.pos
+                                        + Vector2(0, 38 + (32 * i))
+                                        - Playermove * dt,
+                                        00,
+                                        0,
+                                        self.Laserstartimg,
+                                        10,
+                                    )
+                                )
+                            else:
+                                spawn(
+                                    Player_laser(
+                                        self.transform.pos
+                                        + Vector2(0, 38 + (32 * i))
+                                        - Playermove * dt,
+                                        00,
+                                        0,
+                                        self.Laserimg,
+                                        10,
+                                    )
+                                )
+                    Playerlaseroff = False
+                else:
+                    Playerlaseroff = True
+                #dps floor of 40
+                if self.shottype == 2:
                     spawn(
-                        Player_laser(
-                            self.transform.pos
-                            + Vector2(0, 38 + (32 * i))
-                            - Playermove * dt,
-                            00,
+                        Player_missile(
+                            self.transform.pos + Vector2(0, 20),
+                            300,
                             0,
-                            self.Laserimg,
-                            10,
+                            self.missileimg,
+                            self.explosionimg,
+                            6,
+                            2,
                         )
                     )
-            Playerlaseroff = False
-        else:
-            Playerlaseroff = True
-        if pressed_keys[K_x]:
-            if not self.xhold:
+                    self.shotcooldown += 0.2
+            #EXshot types
+            else:
+                #dps roof of 140
+                if self.shottype == 0:
+                    for i in range(-1, 3):
+                        spawn(
+                            Player_bulletEX(
+                                self.transform.pos + Vector2(4, 20),
+                                600,
+                                (10 * i) - 5,
+                                self.bulletimgEX,
+                                self.bulletimg,
+                                7,
+                            )
+                        )
+                    self.shotcooldown += 0.2
+                #dps floor of 100
+                if self.shottype == 1:
+                    if Playerlaseroff:
+                        for i in range(0, 30):
+                            if i==0:
+                                spawn(
+                                    Player_laser(
+                                        self.transform.pos
+                                        + Vector2(0, 38 + (32 * i))
+                                        - Playermove * dt,
+                                        00,
+                                        0,
+                                        self.LaserstartimgEX,
+                                        20,
+                                    )
+                                )
+                            else:
+                                spawn(
+                                    Player_laser(
+                                        self.transform.pos
+                                        + Vector2(0, 38 + (32 * i))
+                                        - Playermove * dt,
+                                        00,
+                                        0,
+                                        self.LaserimgEX,
+                                        20,
+                                    )
+                                )
+                    Playerlaseroff = False
+                else:
+                    Playerlaseroff = True
+                #dps floor of 80
+                if self.shottype == 2:
+                    spawn(
+                        Player_missile(
+                            self.transform.pos + Vector2(0, 20),
+                            300,
+                            0,
+                            self.missileimgEX,
+                            self.explosionimgEX,
+                            24,
+                            8,
+                        )
+                    )
+                    self.shotcooldown += 0.4
+        if pressed_keys[K_z]:
+            if not self.zhold:
                 self.shottype += 1
                 if self.shottype > 2:
                     self.shottype = 0
+            self.zhold = True
+        else:
+            self.zhold = False
+        if pressed_keys[K_x]:
+            if not self.xhold and (PlayerEXcharge>25 or not self.EXchargeON):
+                self.EXchargeON =not self.EXchargeON
+                Playerlaseroff = True
             self.xhold = True
         else:
             self.xhold = False
+        if PlayerEXcharge<=0:
+                self.EXchargeON =False
+                Playerlaseroff = True
+        if pressed_keys[K_c]:
+            if not self.chold:
+                self.shot_on =not self.shot_on
+            self.chold = True
+        else:
+            self.chold = False
+
 
     def checkifhit(self,Bull):
+        global Playerhp
         if self.hitcooldown <= 0:
             if math.pow(self.transform.pos.x-Bull.transform.pos.x,2)+math.pow(self.transform.pos.y-Bull.transform.pos.y,2) <= math.pow(self.Bullethit+Bull.Bullethit,2):
-                self.hp -= 1
+                Playerhp -= 1
                 self.hitcooldown = 1
                 self.sprite.image = pygame.image.load(
-                    "Cosmic-bullet/Sprites/Player hit.png"
+                    "Sprites/Player hit.png"
                 )
-                if self.hp<=0:
+                if Playerhp<=0:
                     self.dead=True
 
 
@@ -229,20 +380,195 @@ class Player_bullet(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.dmg = dmg
         if self.sprite.rect.width > self.sprite.rect.height:
-            self.Bullethit = self.sprite.rect.width * 0.5
+            self.Bullethit = self.sprite.rect.width *0.8
         else:
-            self.Bullethit = self.sprite.rect.height * 0.5
+            self.Bullethit = self.sprite.rect.height *0.8
         self.dead = False
+        self.EX=loaded_scene.player.EXchargeON
 
     def update(self, dt):
         self.transform.pos += self.v * dt
+        if abs(self.transform.pos.x)>500:
+            self.dead = True
+        elif abs(self.transform.pos.y)>500:
+            self.dead = True
+    
+    def hitenemy(self, other):
+        other.hp -= self.dmg 
+        self.dead = True
 
+class Player_bulletEX(Player_bullet):
+    def __init__(
+        self,
+        pos: Vector2,
+        speed: float,
+        ang: float,
+        image: pygame.image,
+        bulletimage: pygame.image,
+        dmg: float = 0,
+    ):
+        super().__init__(pos,speed,ang,image,dmg)
+        self.time=0
+        self.bulletimage=bulletimage
+    def update(self, dt):
+        Player_bullet.update(self,dt)
+        self.time+=dt
+        if self.time>=0.5:
+            for i in range(4):
+                spawn(Player_bullet(
+                    self.transform.pos+Vector2(0,0),
+                    600,
+                    self.transform.rotation-15+i*10,
+                    self.bulletimage,
+                    self.dmg/4
+                    ))
+            self.dead = True
+    def hitenemy(self, other):
+        Player_bullet.hitenemy(self, other)
+        itemgroupspawn(self.transform.pos,[2,0,0],10)
+
+class Player_explosion(Player_bullet):
+    def __init__(
+        self,
+        pos: Vector2,
+        image: pygame.image,
+        dmg: float = 0,
+    ):
+        super().__init__(pos,0,0,image,dmg)
+        self.maxsize=self.sprite.rect.width*3
+        self.sprite.rect.width=1
+        self.sprite.rect.height=1
+        self.Bullethit = self.sprite.rect.width *0.9
+        self.enemieshit = []
+        self.imgPure=self.sprite.image
+        self.time=0.5
+        self.sprite.image=pygame.transform.scale(self.imgPure,(self.sprite.rect.width,self.sprite.rect.height))
+    def update(self, dt):
+        self.time+=dt
+        if self.time>3.5:
+            self.dead = True
+        self.sprite.rect.width=self.maxsize*(1-1/(self.time*2))
+        self.sprite.rect.height=self.maxsize*(1-1/(self.time*2))
+        self.sprite.image=pygame.transform.scale(self.imgPure,(self.sprite.rect.width,self.sprite.rect.height))
+    def hitenemy(self, other):
+        if not other in self.enemieshit:
+            other.hp -= self.dmg 
+            self.enemieshit.append(other)
+
+class Player_missile(Player_bullet):
+    def __init__(
+        self,
+        pos: Vector2,
+        speed: float,
+        ang: float,
+        image: pygame.image,
+        explosionimage:pygame.image=None,
+        dmg: float = 0,
+        explosiondmg: float = 0
+    ):
+        super().__init__(pos,speed,ang,image,dmg)
+        self.explosionimage=explosionimage
+        self.explosiondmg=explosiondmg
+        self.aim=Vector2(0,1000)
+    def update(self, dt):
+        loaded_scene
+        self.aim=Vector2(1000,1000)
+        Player_bullet.update(self,dt)
+        for e in loaded_scene.objects:
+            if isinstance(e,enemy):
+                if Vector2.magnitude_squared(self.transform.pos-e.transform.pos)<self.aim.magnitude_squared():
+                    self.aim=e.transform.pos-self.transform.pos
+            if not self.aim==Vector2(1000,1000):
+                self.v+=(self.aim.normalize()*dt*10)-(self.v.normalize()*dt*5)
+            self.transform.rotation=-self.v.angle_to(Vector2(0,1))
+    def hitenemy(self, other):
+        Player_bullet.hitenemy(self, other)
+        spawn(Player_explosion(self.transform.pos+Vector2(0,0),self.explosionimage,self.explosiondmg))
+        if self.EX:
+                itemgroupspawn(self.transform.pos,[0,3,0],10)
 
 class Player_laser(Player_bullet):
     def update(self, dt):
-        global Playermove
         self.transform.pos += self.v * dt + Playermove * dt
+    
+    def hitenemy(self, other):
+        global Playerlasercool
+        if Playerlasercool == 0.20:
+            other.hp -= self.dmg/10
+            if loaded_scene.player.EXchargeON:
+                itemgroupspawn(self.transform.pos,[0,0,1],10)
+        elif Playerlasercool<= 0:
+            Playerlasercool=0.20
+            other.hp -= self.dmg
+            if self.EX:
+                itemgroupspawn(self.transform.pos,[0,0,10],10)
+            
 
+
+class item(GameObject):
+    #type(0=Energy,1=Scrap,2=Star)
+    def __init__(
+        self,
+        pos: Vector2,
+        image: pygame.image,
+        potency: int = 1,
+        itemtype:int=0
+    ):
+        self.transform = Transform2D(pos.x, pos.y, 0)
+        self.v = pygame.Vector2(0, -150)
+        self.sprite = pygame.sprite.Sprite()
+        self.sprite.image = image
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.potency = potency
+        self.itemtype = itemtype
+        self.itemget = (self.sprite.rect.width *1.4)**2
+        self.followplayer=False
+        self.dead = False
+    def update(self, dt):
+        global loaded_scene
+        global Playerscrap
+        global PlayerEXcharge
+        global Score
+        if self.followplayer:
+            self.transform.pos+=pygame.Vector2.normalize(loaded_scene.player.transform.pos-self.transform.pos)*dt*400
+            if pygame.Vector2.magnitude_squared(loaded_scene.player.transform.pos-self.transform.pos)<self.itemget:
+                if self.itemtype==0:
+                    print("Energy")
+                    if PlayerEXcharge < 250:
+                        if self.potency > (250 - PlayerEXcharge):
+                            Score+=self.potency - (250 - PlayerEXcharge)
+                            PlayerEXcharge = 250
+                        else:
+                            PlayerEXcharge+=self.potency
+                    else:
+                        Score+=self.potency
+                elif self.itemtype==1:
+                    print("Scrap")
+                    Playerscrap+=self.potency
+                else:
+                    print("Score")
+                    Score+=self.potency
+                self.dead = True
+        else:
+            self.transform.pos+=self.v*dt
+            if pygame.Vector2.magnitude_squared(loaded_scene.player.transform.pos-self.transform.pos)<100**2 or loaded_scene.player.transform.pos.y >216:
+                self.followplayer = True
+
+def itemgroupspawn(pos: Vector2,itemvalues:list[int]=[0,0,0],area:float=0):
+    #type(0=Energy,1=Scrap,2=Star)
+    itemtype=0
+    itemscale=2
+    while itemvalues!=[0,0,0]:
+        while itemvalues[itemtype]<10**itemscale:
+            if itemscale == 0:
+                itemscale=2
+                itemtype+=1
+            else:
+                itemscale-=1
+        spawn(item(pos+pygame.Vector2.rotate(pygame.Vector2(0,random.randrange(0 ,area)),random.randrange(0,360)),
+                itemimage[itemtype][itemscale],
+                10**itemscale))
+        itemvalues[itemtype]-=10**itemscale
 
 class Bullet(GameObject):
     def __init__(
@@ -266,11 +592,14 @@ class Bullet(GameObject):
             self.Bullethit = self.sprite.rect.height * 0.5
         self.dead = False
 
+
     def update(self, dt):
         self.transform.pos += self.v * dt
         self.v += self.a * dt
-        
-
+        if abs(self.transform.pos.x)>500:
+            self.dead = True
+        elif abs(self.transform.pos.y)>500:
+            self.dead = True
 
 class shotdata:
     def __init__(
@@ -343,7 +672,8 @@ class wavedata(GameObject):
         incrementchange: list[float, float, float, float] = [0, 0, 0, 0],
         incrementcap: int = 1,
         shotdata:list[shotdata]=None,
-        hp:float=1
+        hp:float=1,
+        itemdata:list[int,int,int,float]=[0,0,0,0]
     ):
         self.sprite=None
         self.transform = transformation
@@ -361,6 +691,7 @@ class wavedata(GameObject):
         self.shotdata=shotdata
         self.hp=hp
         self.aaaa=[]
+        self.itemdata=itemdata
 
 
     def update(self, dt,):
@@ -392,7 +723,8 @@ class wavedata(GameObject):
                             + self.i * self.incrementchange[3],
                         ],
                         self.hp,
-                        self.aaaa
+                        self.aaaa,
+                        self.itemdata
                     )
                 )
             self.shotcooldown += self.shotrate
@@ -409,6 +741,7 @@ class enemy(GameObject):
         a: list[float, float] = [0, 0],
         hp: float = 1,
         shotdata: list[shotdata] = None,
+        itemdata:list[int,int,int,float]=[0,0,0,0]
     ):
         self.transform = transformation
         self.sprite = pygame.sprite.Sprite()
@@ -420,6 +753,7 @@ class enemy(GameObject):
         self.sprite.rect = self.sprite.image.get_rect()
         self.shotdata = shotdata
         self.hp = hp
+        self.itemdata=itemdata
         if self.sprite.rect.width > self.sprite.rect.height:
             self.Bullethit = self.sprite.rect.width * 0.5
         else:
@@ -434,20 +768,98 @@ class enemy(GameObject):
         self.v += self.a * dt
         for x in self.shotdata:
             x.update(dt, self.transform)
+        if abs(self.transform.pos.x)>500:
+            self.dead = True
+        elif abs(self.transform.pos.y)>500:
+            self.dead = True
     
     def checkifhit(self,Object):
         if math.pow(self.transform.pos.x-Object.transform.pos.x,2)+math.pow(self.transform.pos.y-Object.transform.pos.y,2) <= math.pow(self.Bullethit+Object.Bullethit,2):
-            if isinstance(Object,Player_laser):
-                if self.hitcooldown == 0.25:
-                    self.hp-= Object.dmg*0.2
-                elif self.hitcooldown <=0 :
-                    self.hp-= Object.dmg
-                    self.hitcooldown = 0.25
-            else:
-                self.hp -= Object.dmg
-                Object.dead=True
+            Object.hitenemy(self)
             if self.hp<=0:
                 self.dead=True
+                itemgroupspawn(self.transform.pos,self.itemdata[0:3],self.itemdata[3])
+                self.itemdata=[0,0,0,0]
+
+class bossenemy(enemy):
+    def __init__(
+        self,
+        transformation: Transform2D,
+        image: pygame.image,
+        nextStage:str,
+        hpAll:list[float]=[0],
+        timerAll:list[float]=[0],
+        shotdataAll:list[list[shotdata]]=[None],
+        itemdataAll:list[list[int,int,int,float]]=[[0,0,0,0]]
+        ):
+        super().__init__(transformation,image,[0,0],[0,0],hpAll[0],shotdataAll[0],itemdataAll[0])
+        self.hpAll=hpAll
+        self.timerAll=timerAll
+        self.timer=timerAll[0]
+        self.shotdataAll=shotdataAll
+        self.itemdataAll=itemdataAll
+        self.bossPhase=0
+        self.nextStage=nextStage
+    def update(self, dt):
+        global scene_change
+
+        self.timer -= dt
+        
+        if self.timer <= 0:
+            self.bossPhase+=1
+            self.dead=False
+            if len(self.hpAll)>self.bossPhase:
+                self.hp=self.hpAll[self.bossPhase]
+                self.timer=self.timerAll[self.bossPhase]
+                self.shotdata=self.shotdataAll[self.bossPhase]
+            else:
+                scene_change=self.nextStage
+        self.movement(dt)
+        for x in self.shotdata:
+            x.update(dt, self.transform)
+    def movement(self, dt):
+        self.dead=False
+    def checkifhit(self,Object):
+        global scene_change
+        enemy.checkifhit(self,Object)
+        if self.dead:
+            self.bossPhase+=1
+            self.dead=False
+            if len(self.hpAll)>self.bossPhase:
+                self.hp=self.hpAll[self.bossPhase]
+                self.timer=self.timerAll[self.bossPhase]
+                self.shotdata=self.shotdataAll[self.bossPhase]
+                self.itemdata=self.itemdataAll[self.bossPhase]
+            else:
+                scene_change=self.nextStage
+
+class bossSpawner(GameObject):
+    def __init__(self,
+        bossEnemy:bossenemy,
+        spawnTime:float=0,
+        spawnDelay:float=0,
+    ):
+        self.bossenemy=bossEnemy
+        self.spawntime=spawnTime
+        self.spawndelay=spawnDelay
+        self.dead = False
+        self.noenemy = False
+        self.sprite=None
+    def update(self,dt):
+        global loaded_scene
+        self.noenemy = True
+        if self.spawntime<0:
+            for i in loaded_scene.objects:
+                if isinstance(i,enemy):
+                    self.noenemy = False
+            if self.noenemy:
+                if self.spawndelay<0:
+                    spawn(self.bossenemy)
+                    self.dead = True
+                else:
+                    self.spawndelay-=dt
+        else:
+            self.spawntime-=dt
 
 class background(GameObject):
     def __init__(self,x,y,path,scroll=0):
@@ -464,7 +876,7 @@ class background(GameObject):
             self.transform.pos -= (0,self.scroll)
 
 class sidebar(GameObject):
-    def __init__(self,x,y,path,scroll=0):
+    def __init__(self,x,y,path="Sprites\sidebar.png"):
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.image.load(path)
         self.sprite.rect = self.sprite.image.get_rect()
@@ -475,19 +887,17 @@ class sidebar(GameObject):
                 
 class UI(GameObject):
     pass
-    
+
 class image(UI):
-    def __init__(self,x,y,path,rotV=0,rot=0):
+    def __init__(self,x,y,path,rot=0):
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.image.load(path)
         self.sprite.rect = self.sprite.image.get_rect()
         self.transform = Transform2D(x,y,0)
         self.dead = False
-        self.rot = rot
-        self.rotV = rotV
     def update(self,dt):
-        self.transform.rotation += self.rotV
-
+        self.transform.rotation = rot*(dt)
+        
 class textobject(UI):
     def __init__(self,x,y,text,colour,size=72):
         pygame.font.init()
@@ -508,12 +918,110 @@ class textobject(UI):
         if recenter:
             self.sprite.rect.center = self.center
 
+#Cole
+class Bar(UI):
+    def __init__(self, colour, current_value, max_value, length, width, x, y):
+        super().__init__()
+        self.transform = Transform2D(x, y, 0)
+        self.colour = colour
+        self.current_value = current_value
+        self.max_value = max_value
+        self.length = length
+        self.width = width
+        self.sprite = Sprite()
+        self.sprite.image = pygame.Surface([length, width])
+        self.sprite.image.fill(self.colour)
+        self.sprite.rect = self.sprite.image.get_rect()
+
+    def update(self, dt):
+        pressed_keys = pygame.key.get_pressed()
+
+        length = self.length * (self.current_value/self.max_value)
+        self.sprite.image = pygame.transform.scale(self.sprite.image, (length, self.width));
+
+    def set_value(self, amount):
+        self.current_value = amount
+        if self.callback is not None:
+            self.callback(str(self.current_value))
+
+    def increase(self, amount):
+        self.current_value += amount
+        if self.callback is not None:
+            self.callback(str(self.current_value))
+
+    def decrease(self, amount):
+        self.current_value -= amount
+        if self.callback is not None:
+            self.callback(str(self.current_value))
+
+    def register_callback(self, callback):
+        self.callback = callback
+
+#Kirin
+class statusbar(UI):
+    def __init__(self,x,y,folder="defaultbar",maxval=200,baseval=0):
+        self.transform = Transform2D(x,y,0)
+        self.sprite = pygame.sprite.Sprite()
+        self.root = folder
+        self.image = pygame.surface.Surface((273,96))
+        self.icon = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\Icon.png"),3)
+        self.bg = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\BG.png"),3)
+        self.bar = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\Bar.png"),3)
+        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))]) 
+        self.sprite.image = self.image
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.val = baseval
+        self.max = maxval
+        self.dead = False
+    def update(self,dt):
+        self.bar = pygame.transform.scale(self.bar,(math.ceil(180*(self.val/self.max)),54))
+        self.image.fill((164,111,43))
+        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))])
+
+class scrap_bar(statusbar):
+    def __init__(self,x,y):
+        super().__init__(x,y)
+        #self.root = "Scrapbar"
+        self.max = 75 + 25 * Playerhp
+        self.val = Playerscrap
+    def update(self,dt):
+        global Playerhp
+        self.max = 75 + 25 * Playerhp
+        self.val = Playerscrap
+        while self.val > self.max:
+            self.val -= self.max
+            Playerhp += 1
+            self.max = 75 + 25 * Playerhp
+        super().update(dt)
+
+class energy_bar(statusbar):
+    def __init__(self,x,y):
+        super().__init__(x,y)
+        #self.root = "Energybar"
+        self.max = 250
+        self.val = PlayerEXcharge
+    def update(self,dt):
+        self.val = PlayerEXcharge
+        super().update(dt)
+
+class gameUI:
+    def __init__(self):
+        things = [
+            sidebar(-324,432),
+            sidebar(768,432),
+            scrap_bar(-555,216),
+            energy_bar(-555,166)
+            ]
+        for thing in things:
+            spawn(thing)
+        
+
 class button(UI):
     def __init__(self,x,y,scene,text="",quitbutton=False):
         self.sprite = pygame.sprite.Sprite()
         self.transform = Transform2D(x,y,0)
-        self.enabled = pygame.image.load("Cosmic-bullet\Sprites\Button(1B).png")
-        self.disabled = pygame.image.load("Cosmic-bullet\Sprites\Button(2B).png")
+        self.enabled = pygame.image.load("Sprites\Button(1).png")
+        self.disabled = pygame.image.load("Sprites\Button(2).png")
         self.type = textobject(0,0,text,DARKBLUE)
         self.text = text
         self.update_sprite(self.enabled,DARKBLUE)
@@ -539,28 +1047,6 @@ class button(UI):
                 scene_change = self.scene
         else:
             self.update_sprite(self.enabled,DARKBLUE)
-            
-class statusbar(UI):
-    def __init__(self,x,y,maxval=200,baseval=0,folder="defaultbar"):
-        self.transform = Transform2D(x,y,0)
-        self.sprite = pygame.sprite.Sprite()
-        self.root = folder
-        self.image = pygame.surface.Surface((273,96))
-        self.icon = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\Icon.png"),3)
-        self.bg = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\BG.png"),3)
-        self.bar = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\Bar.png"),3)
-        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))]) 
-        self.sprite.image = self.image
-        self.sprite.rect = self.sprite.image.get_rect()
-        self.val = baseval
-        self.max = maxval
-        self.dead = False
-    def update(self,dt):
-        if self.val < self.max:
-            self.val += 1
-        self.bar = pygame.transform.scale(self.bar,(math.ceil(180*(self.val/self.max)),54))
-        self.image.fill((164,111,43))
-        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))])
 
     #objects: list[GameObject]
 
@@ -594,7 +1080,8 @@ def render(game_object: GameObject, screen: pygame.Surface,):
         rect = rect_from_hitbox_and_pos(screen_pos, sprite.rect)
         screen.blit(
             pygame.transform.rotate(
-                game_object.sprite.image, -game_object.transform.rotation
+                game_object.sprite.image,
+                -game_object.transform.rotation
             ),
             rect,
         )
@@ -655,7 +1142,7 @@ def main(loading: str, lib: dict):
                 lambda game_obj: game_object.sprite is not None, loaded_scene.objects
             )
         )
-        object_matrix = [[],[],[],[],[],[],[]]
+        object_matrix = [[],[],[],[],[],[],[],[]]
         for game_object in game_objects_with_sprites:
             if isinstance(game_object,background):
                 object_matrix[0].append(game_object)
@@ -663,18 +1150,19 @@ def main(loading: str, lib: dict):
                 object_matrix[1].append(game_object)
             elif isinstance(game_object,Player):
                 object_matrix[2].append(game_object)
-            elif isinstance(game_object,Bullet):
-                object_matrix[3].append(game_object)
             elif isinstance(game_object,Player_bullet):
+                object_matrix[3].append(game_object)
+            elif isinstance(game_object,item):
                 object_matrix[4].append(game_object)
-            elif isinstance(game_object,sidebar):
+            elif isinstance(game_object,Bullet):
                 object_matrix[5].append(game_object)
-            elif isinstance(game_object,UI):
+            elif isinstance(game_object,sidebar):
                 object_matrix[6].append(game_object)
+            elif isinstance(game_object,UI):
+                object_matrix[7].append(game_object)
         for array in object_matrix:
-            for item in array:
-                render(item, screen)
-            
+            for thing in array:
+                render(thing, screen)
         i = 0
         for b in loaded_scene.objects:
             if isinstance(b, Bullet):
