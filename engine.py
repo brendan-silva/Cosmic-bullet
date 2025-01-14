@@ -31,8 +31,6 @@ HEIGHT = 864
 WHITE = (255, 255, 255)
 DARKBLUE = (35,33,87)
 LIGHTBLUE = (79,90,154)
-TEST = (255,0,0)
-
 
 scene_lib = {}
 scene_change = None
@@ -340,7 +338,7 @@ class Player(GameObject):
         else:
             self.xhold = False
         if PlayerEXcharge<=0:
-                self.EXchargeON =False
+                self.EXchargeON = False
                 Playerlaseroff = True
         if pressed_keys[K_c]:
             if not self.chold:
