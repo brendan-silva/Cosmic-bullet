@@ -981,7 +981,7 @@ class statusbar(UI):
 class scrap_bar(statusbar):
     def __init__(self,x,y):
         super().__init__(x,y)
-        #self.root = "Scrapbar"
+        self.root = "Scrapbar"
         self.max = 75 + 25 * Playerhp
         self.val = Playerscrap
     def update(self,dt):
@@ -997,7 +997,7 @@ class scrap_bar(statusbar):
 class energy_bar(statusbar):
     def __init__(self,x,y):
         super().__init__(x,y)
-        #self.root = "Energybar"
+        self.root = "Energybar"
         self.max = 250
         self.val = PlayerEXcharge
     def update(self,dt):
