@@ -10,8 +10,8 @@ import random
 Playermove = Vector2(0, 0)
 Playerlaseroff = True
 Playerlasercool = 0
-Playerhp=999#3
-Playerscrap=0
+Playerhp=1
+Playerscrap=1
 PlayerEXcharge = 50
 Score=0
 itemimage=[[pygame.image.load("Sprites\items\itemEnergy1.png"),
@@ -31,6 +31,8 @@ HEIGHT = 864
 WHITE = (255, 255, 255)
 DARKBLUE = (35,33,87)
 LIGHTBLUE = (79,90,154)
+TEST = (255,0,0)
+
 
 scene_lib = {}
 scene_change = None
@@ -338,7 +340,7 @@ class Player(GameObject):
         else:
             self.xhold = False
         if PlayerEXcharge<=0:
-                self.EXchargeON = False
+                self.EXchargeON =False
                 Playerlaseroff = True
         if pressed_keys[K_c]:
             if not self.chold:
@@ -565,7 +567,7 @@ def itemgroupspawn(pos: Vector2,itemvalues:list[int]=[0,0,0],area:float=0):
                 itemscale-=1
         spawn(item(pos+pygame.Vector2.rotate(pygame.Vector2(0,random.randrange(0 ,area)),random.randrange(0,360)),
                 itemimage[itemtype][itemscale],
-                10**itemscale))
+                10**itemscale,itemtype))
         itemvalues[itemtype]-=10**itemscale
 
 class Bullet(GameObject):
@@ -975,27 +977,30 @@ class statusbar(UI):
         self.bar = pygame.transform.scale(self.bar,(math.ceil(180*(self.val/self.max)),54))
         self.image.fill((164,111,43))
         self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))])
+        self.sprite.image = self.image
+        self.sprite.rect = self.sprite.image.get_rect()
 
 class scrap_bar(statusbar):
+    
     def __init__(self,x,y):
-        super().__init__(x,y)
-        self.root = "Scrapbar"
+        super().__init__(x,y,folder="Scrapbar")
         self.max = 75 + 25 * Playerhp
         self.val = Playerscrap
     def update(self,dt):
         global Playerhp
+        global Playerscrap
         self.max = 75 + 25 * Playerhp
         self.val = Playerscrap
-        while self.val > self.max:
-            self.val -= self.max
+        if self.val >= self.max:
+            Playerscrap -= self.max
+            self.val = Playerscrap
             Playerhp += 1
             self.max = 75 + 25 * Playerhp
         super().update(dt)
 
 class energy_bar(statusbar):
     def __init__(self,x,y):
-        super().__init__(x,y)
-        self.root = "Energybar"
+        super().__init__(x,y,folder="Energybar")
         self.max = 250
         self.val = PlayerEXcharge
     def update(self,dt):
