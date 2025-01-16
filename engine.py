@@ -1050,6 +1050,28 @@ class button(UI):
                 scene_change = self.scene
         else:
             self.update_sprite(self.enabled,DARKBLUE)
+            
+class statusbar(UI):
+    def __init__(self,x,y,maxval=200,baseval=0,folder="defaultbar"):
+        self.transform = Transform2D(x,y,0)
+        self.sprite = pygame.sprite.Sprite()
+        self.root = folder
+        self.image = pygame.surface.Surface((273,96))
+        self.icon = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\Icon.png"),3)
+        self.bg = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\BG.png"),3)
+        self.bar = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\Bar.png"),3)
+        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))]) 
+        self.sprite.image = self.image
+        self.sprite.rect = self.sprite.image.get_rect()
+        self.val = baseval
+        self.max = maxval
+        self.dead = False
+    def update(self,dt):
+        if self.val < self.max:
+            self.val += 1
+        self.bar = pygame.transform.scale(self.bar,(math.ceil(180*(self.val/self.max)),54))
+        self.image.fill((164,111,43))
+        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))])
 
     #objects: list[GameObject]
 
