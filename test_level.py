@@ -20,14 +20,39 @@ def stage_1() -> Scene:
                     shotdata(
                         Transform2D(0, 0, 0),
                         pygame.image.load("Sprites/Enemy Bullet 1.png"),
-                        [10, 0],
-                        [100, 0],
-                        12,
+                        [50, -90],
+                        [30, 0],
+                        5,
                         0.1,
                         0,
-                        [0, 30, 0, 0],
-                        [0, 0, 0, 141],
-                    )
+                        [3,0, 0, 0],
+                        [0, 141, 0, 141],
+                        0
+                    ),
+                    shotdata(
+                        Transform2D(0, 0, 0),
+                        pygame.image.load("Sprites/Enemy Bullet 1.png"),
+                        [50, 90],
+                        [30, 0],
+                        5,
+                        0.1,
+                        0,
+                        [3,0, 0, 0],
+                        [0, -141, 0, -141],
+                        0
+                    ),
+                    shotdata(
+                        Transform2D(0, 0, 0),
+                        pygame.image.load("Sprites/Enemy Bullet 2.png"),
+                        [100,0],
+                        [10, 180],
+                        1,
+                        0.01,
+                        0,
+                        [0,5, 0,5],
+                        [0,2.2, 0,7],
+                        0
+                    ),
                 ],
                 [
                     shotdata(
@@ -89,4 +114,4 @@ def stage_2() -> Scene:
         energy_bar(-555,0)
     )
     return new_scene
-main('stage_2',lib={'stage_1':stage_1(),'stage_2':stage_2()})
+main('stage_1',lib={'stage_1':stage_1(),'stage_2':stage_2()})

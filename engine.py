@@ -10,10 +10,11 @@ import random
 Playermove = Vector2(0, 0)
 Playerlaseroff = True
 Playerlasercool = 0
-Playerhp=1
+Playerhp=10
 Playerscrap=1
 PlayerEXcharge = 50
 Score=0
+killbullet=False
 itemimage=[[pygame.image.load("Sprites\items\itemEnergy1.png"),
             pygame.image.load("Sprites\items\itemEnergy10.png"),
             pygame.image.load("Sprites\items\itemEnergy100.png")
@@ -352,10 +353,12 @@ class Player(GameObject):
 
     def checkifhit(self,Bull):
         global Playerhp
+        global killbullet
         if self.hitcooldown <= 0:
             if math.pow(self.transform.pos.x-Bull.transform.pos.x,2)+math.pow(self.transform.pos.y-Bull.transform.pos.y,2) <= math.pow(self.Bullethit+Bull.Bullethit,2):
                 Playerhp -= 1
                 self.hitcooldown = 1
+                killbullet=True
                 self.sprite.image = pygame.image.load(
                     "Sprites/Player hit.png"
                 )
@@ -579,6 +582,10 @@ class Bullet(GameObject):
         a: list[float, float],
     ):
         self.transform = transformation
+        if a[0]*2>v[0]:
+            self.transform.rotation=a[1]
+        else:
+            self.transform.rotation=v[1]
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = image
         self.v = pygame.Vector2(0, v[0])
@@ -821,10 +828,12 @@ class bossenemy(enemy):
         self.dead=False
     def checkifhit(self,Object):
         global scene_change
+        global killbullet
         enemy.checkifhit(self,Object)
         if self.dead:
             self.bossPhase+=1
             self.dead=False
+            killbullet=True
             if len(self.hpAll)>self.bossPhase:
                 self.hp=self.hpAll[self.bossPhase]
                 self.timer=self.timerAll[self.bossPhase]
@@ -1138,6 +1147,7 @@ def main(loading: str, lib: dict):
     global loaded_scene
     global scene_lib
     global scene_change
+    global killbullet
     scene_lib = lib
     loaded_scene = scene_lib[loading]
     delta_time: float = 0
@@ -1198,12 +1208,11 @@ def main(loading: str, lib: dict):
                     if isinstance(pb, Player_bullet):
                         e.checkifhit(pb)
         while i < len(loaded_scene.objects):
-            if loaded_scene.objects[i].dead or (
-                Playerlaseroff and isinstance(loaded_scene.objects[i], Player_laser)
-            ):
+            if loaded_scene.objects[i].dead or (Playerlaseroff and isinstance(loaded_scene.objects[i], Player_laser)) or (killbullet and isinstance(loaded_scene.objects[i],Bullet)):
                 del loaded_scene.objects[i]
             else:
                 i += 1
+        killbullet=False
         if not (scene_change == None):
             loaded_scene = scene_lib[scene_change]
             scene_change = None
