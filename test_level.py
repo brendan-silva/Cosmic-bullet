@@ -11,10 +11,10 @@ def stage_1() -> Scene:
         bossSpawner(
         bossenemy(
             Transform2D(0, 300, 0),
-            pygame.image.load("Sprites/Enemy.png"),
+            pygame.image.load("Sprites\Boss Enemy.png"),
             'stage_2',
-            [10,10],
-            [1,10],
+            [1000,1000],
+            [60,60],
             [
                 [
                     shotdata(
@@ -45,8 +45,8 @@ def stage_1() -> Scene:
             ],
             [[111,111,111,100],[111,111,111,100]]
         ),
-        10,
-        5,
+        0,
+        2,
         ),
         statusbar(-555,216),
         sidebar(-324,432,"Sprites\sidebar.png"),
@@ -86,8 +86,8 @@ def stage_2() -> Scene:
             [111,111,111,100]
         ),
         statusbar(-555,216),
-        sidebar(-324,432,"Cosmic-bullet\Sprites\sidebar.png"),
-        sidebar(768,432,"Cosmic-bullet\Sprites\sidebar.png")
+        sidebar(-324,432,"Sprites\sidebar.png"),
+        sidebar(768,432,"Sprites\sidebar.png")
     )
     return new_scene
 
@@ -136,4 +136,4 @@ def test() -> Scene:
     )
     return new_scene
 
-main('stage_1',lib={'test':test(),'stage_1':stage_1(),'stage_2':stage_2(),'main_menu':main_menu()})
+main('stage_1',lib={'test':test(),'stage_1':stage_1(),'stage_2':stage_2()})

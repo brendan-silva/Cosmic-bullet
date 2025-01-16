@@ -1015,9 +1015,9 @@ class statusbar(UI):
         self.sprite = pygame.sprite.Sprite()
         self.root = folder
         self.image = pygame.surface.Surface((273,96))
-        self.icon = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\Icon.png"),3)
-        self.bg = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\BG.png"),3)
-        self.bar = pygame.transform.scale_by(pygame.image.load("Cosmic-bullet\Sprites\\"+self.root+"\Bar.png"),3)
+        self.icon = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\Icon.png"),3)
+        self.bg = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\BG.png"),3)
+        self.bar = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\Bar.png"),3)
         self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))]) 
         self.sprite.image = self.image
         self.sprite.rect = self.sprite.image.get_rect()
