@@ -7,13 +7,18 @@ from typing_extensions import Self
 import math
 import copy
 import random
+running = True
 Playermove = Vector2(0, 0)
 Playerlaseroff = True
 Playerlasercool = 0
 Playerhp=1
 Playerscrap=1
 PlayerEXcharge = 50
+EXchargeON = False
 Score=0
+file = open("PersonalBest.txt","r")
+PB = math.ceil(float(file.read()))
+file.close()
 itemimage=[[pygame.image.load("Sprites\items\itemEnergy1.png"),
             pygame.image.load("Sprites\items\itemEnergy10.png"),
             pygame.image.load("Sprites\items\itemEnergy100.png")
@@ -31,8 +36,6 @@ HEIGHT = 864
 WHITE = (255, 255, 255)
 DARKBLUE = (35,33,87)
 LIGHTBLUE = (79,90,154)
-TEST = (255,0,0)
-
 
 scene_lib = {}
 scene_change = None
@@ -72,7 +75,7 @@ class GameObject(metaclass=ABCMeta):
 
     This class is a meta class meant to be inherited. This class represents a
     generic game object. All methods on the class are abstract meaning they
-    have to be overrode.
+    have to be overridden.
 
     Attributes
     ----------
@@ -130,7 +133,7 @@ class GameObject(metaclass=ABCMeta):
 
 class Player(GameObject):
     def __init__(self):
-        self.transform = Transform2D(0, 0, 0)
+        self.transform = Transform2D(0, (-1*HEIGHT/4), 0)
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.image.load("Sprites/Player.png")
         self.sprite.rect = self.sprite.image.get_rect(center=(0, 0))
@@ -164,12 +167,14 @@ class Player(GameObject):
         global Playerlaseroff
         global Playermove
         global PlayerEXcharge
+        global EXchargeON
+        EXchargeON = self.EXchargeON
         if self.EXchargeON:
             PlayerEXcharge-=dt*25
         elif PlayerEXcharge < 125:
             PlayerEXcharge+=dt*5
-        if PlayerEXcharge<0:
-                self.EXchargeON =False
+        if PlayerEXcharge<1:
+            self.EXchargeON =False
         if self.hitcooldown >= 0:
             self.hitcooldown -= dt
             if self.hitcooldown <= 0:
@@ -339,7 +344,7 @@ class Player(GameObject):
             self.xhold = True
         else:
             self.xhold = False
-        if PlayerEXcharge<=0:
+        if PlayerEXcharge<=1:
                 self.EXchargeON =False
                 Playerlaseroff = True
         if pressed_keys[K_c]:
@@ -360,8 +365,11 @@ class Player(GameObject):
                     "Sprites/Player hit.png"
                 )
                 if Playerhp<=0:
+                    Score = 0
                     self.dead=True
-
+                    if loaded_scene != 'death':
+                        global scene_change
+                        scene_change = 'death'
 
 class Player_bullet(GameObject):
     def __init__(
@@ -445,7 +453,7 @@ class Player_explosion(Player_bullet):
         self.sprite.image=pygame.transform.scale(self.imgPure,(self.sprite.rect.width,self.sprite.rect.height))
     def update(self, dt):
         self.time+=dt
-        if self.time>3.5:
+        if self.time>1.5:
             self.dead = True
         self.sprite.rect.width=self.maxsize*(1-1/(self.time*2))
         self.sprite.rect.height=self.maxsize*(1-1/(self.time*2))
@@ -533,7 +541,6 @@ class item(GameObject):
             self.transform.pos+=pygame.Vector2.normalize(loaded_scene.player.transform.pos-self.transform.pos)*dt*400
             if pygame.Vector2.magnitude_squared(loaded_scene.player.transform.pos-self.transform.pos)<self.itemget:
                 if self.itemtype==0:
-                    print("Energy")
                     if PlayerEXcharge < 250:
                         if self.potency > (250 - PlayerEXcharge):
                             Score+=self.potency - (250 - PlayerEXcharge)
@@ -541,12 +548,10 @@ class item(GameObject):
                         else:
                             PlayerEXcharge+=self.potency
                     else:
-                        Score+=self.potency
+                        Score+=self.potency*2**(Score/2000)
                 elif self.itemtype==1:
-                    print("Scrap")
                     Playerscrap+=self.potency
                 else:
-                    print("Score")
                     Score+=self.potency
                 self.dead = True
         else:
@@ -821,6 +826,7 @@ class bossenemy(enemy):
         self.dead=False
     def checkifhit(self,Object):
         global scene_change
+        global PB
         enemy.checkifhit(self,Object)
         if self.dead:
             self.bossPhase+=1
@@ -831,6 +837,14 @@ class bossenemy(enemy):
                 self.shotdata=self.shotdataAll[self.bossPhase]
                 self.itemdata=self.itemdataAll[self.bossPhase]
             else:
+                if Score > PB:
+                    PB = math.ceil(Score)
+                file = open("PersonalBest.txt","r")
+                if PB > float(file.read()):
+                    file.close()
+                    file = open("PersonalBest.txt","w")
+                    file.write(str(PB))
+                print(PB)
                 scene_change=self.nextStage
 
 class bossSpawner(GameObject):
@@ -899,7 +913,7 @@ class image(UI):
         self.transform.rotation = rot*(dt)
         
 class textobject(UI):
-    def __init__(self,x,y,text,colour,size=72):
+    def __init__(self,x,y,text,colour,size=72,scoretxt=(0,False)):
         pygame.font.init()
         self.font = pygame.font.Font(None, size)
         self.sprite = pygame.sprite.Sprite()
@@ -910,8 +924,15 @@ class textobject(UI):
         self.dead = False
         self.text = text
         self.colour = colour
+        self.score = scoretxt
     def update(self,dt):
-        pass
+        if self.score[1]:
+            if self.score[0] == 0:
+                self.text = str(Score)
+            else:
+                self.text = self.text[0:self.score[0]]
+                self.text += str(math.ceil(Score))    
+        self.changetext(self.text,False)
     def changetext(self,text,recenter=False):
         self.sprite.image = pygame.font.Font.render(self.font,text,False,self.colour)
         self.sprite.rect = self.sprite.image.get_rect()
@@ -973,30 +994,44 @@ class statusbar(UI):
         self.val = baseval
         self.max = maxval
         self.dead = False
+        self.hastext = False
     def update(self,dt):
         self.bar = pygame.transform.scale(self.bar,(math.ceil(180*(self.val/self.max)),54))
         self.image.fill((164,111,43))
-        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))])
+        if self.val > 1:
+            self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))])
+        else:
+            self.image.blits([(self.bg,(84,18)),(self.icon,(0,0))])
         self.sprite.image = self.image
         self.sprite.rect = self.sprite.image.get_rect()
 
 class scrap_bar(statusbar):
-    
     def __init__(self,x,y):
         super().__init__(x,y,folder="Scrapbar")
-        self.max = 75 + 25 * Playerhp
+        self.max = 25 * Playerhp**2 + 75
         self.val = Playerscrap
+        self.text = textobject(x,y,str(Playerhp),(255, 132, 0),90)
+        self.text2 = textobject(x,y,str(Playerhp),(128, 66, 0),108)
+        self.text.center = (48,48)
+        self.text2.center = (47,48)
+        self.image.blit(self.text.sprite.image,self.text.sprite.rect)
     def update(self,dt):
         global Playerhp
         global Playerscrap
-        self.max = 75 + 25 * Playerhp
-        self.val = Playerscrap
+        self.max = 25 * Playerhp**2 + 75
+        for i in range(5):
+            if self.val < Playerscrap:
+                self.val += 1
         if self.val >= self.max:
-            Playerscrap -= self.max
-            self.val = Playerscrap
+            Playerscrap -= self.max-1
+            self.val = 1
             Playerhp += 1
-            self.max = 75 + 25 * Playerhp
+            self.max = 25 * Playerhp**2 + 75
+        self.text.changetext(str(Playerhp),True)
+        self.text2.changetext(str(Playerhp),True)
         super().update(dt)
+        self.image.blit(self.text2.sprite.image,self.text2.sprite.rect)
+        self.image.blit(self.text.sprite.image,self.text.sprite.rect)
 
 class energy_bar(statusbar):
     def __init__(self,x,y):
@@ -1004,27 +1039,29 @@ class energy_bar(statusbar):
         self.max = 250
         self.val = PlayerEXcharge
     def update(self,dt):
-        self.val = PlayerEXcharge
+        if EXchargeON:
+            self.icon = pygame.transform.scale_by(pygame.image.load("Sprites\Energybar\Icon_A.png"),3)
+        else:
+            if PlayerEXcharge >= 200:
+                self.icon = pygame.transform.scale_by(pygame.image.load("Sprites\Energybar\Icon_B.png"),3)
+            elif PlayerEXcharge >= 50:
+                self.icon = pygame.transform.scale_by(pygame.image.load("Sprites\Energybar\Icon_C.png"),3)
+            else:
+                self.icon = pygame.transform.scale_by(pygame.image.load("Sprites\Energybar\Icon_D.png"),3)
+        #self.val = PlayerEXcharge
+        for i in range(5):
+            if self.val < PlayerEXcharge:
+                self.val += 1
+            elif self.val > PlayerEXcharge and self.val > 1:
+                self.val -= 1
         super().update(dt)
 
-class gameUI:
-    def __init__(self):
-        things = [
-            sidebar(-324,432),
-            sidebar(768,432),
-            scrap_bar(-555,216),
-            energy_bar(-555,166)
-            ]
-        for thing in things:
-            spawn(thing)
-        
-
 class button(UI):
-    def __init__(self,x,y,scene,text="",quitbutton=False):
+    def __init__(self,x,y,scene,text="",quitbutton=False,superquit=False):
         self.sprite = pygame.sprite.Sprite()
         self.transform = Transform2D(x,y,0)
-        self.enabled = pygame.image.load("Sprites\Button(1).png")
-        self.disabled = pygame.image.load("Sprites\Button(2).png")
+        self.enabled = pygame.image.load("Sprites\Button(1B).png")
+        self.disabled = pygame.image.load("Sprites\Button(2B).png")
         self.type = textobject(0,0,text,DARKBLUE)
         self.text = text
         self.update_sprite(self.enabled,DARKBLUE)
@@ -1032,6 +1069,7 @@ class button(UI):
         self.dead = False
         self.scene = scene
         self.quitbutton = quitbutton
+        self.superquit = superquit
     def update_sprite(self,image,colour):
         self.type = textobject(0,0,self.text,colour)
         self.sprite = pygame.sprite.Sprite()
@@ -1041,37 +1079,29 @@ class button(UI):
         self.sprite.image.blit(self.type.sprite.image,coords)
     def update(self,dt):
         global mousedown
-        if self.sprite.rect.collidepoint((pygame.mouse.get_pos()[0]-WIDTH/2+self.sprite.rect.width/2,pygame.mouse.get_pos()[1]-HEIGHT/2+self.sprite.rect.height/2)):
+        if self.sprite.rect.collidepoint((self.transform.pos[0]+pygame.mouse.get_pos()[0]-WIDTH/2+self.sprite.rect.width/2,self.transform.pos[1]+pygame.mouse.get_pos()[1]-HEIGHT/2+self.sprite.rect.height/2)):
             self.update_sprite(self.disabled,LIGHTBLUE)
             if mousedown == True:
                 if self.quitbutton:
-                    pygame.quit()
-                global scene_change
-                scene_change = self.scene
+                    global running
+                    global game_loop
+                    if self.superquit:
+                        global PB
+                        if Score > PB:
+                            PB = math.ceil(Score)
+                        file = open("PersonalBest.txt","r")
+                        if PB > float(file.read()):
+                            file.close()
+                            file = open("PersonalBest.txt","w")
+                            file.write(str(PB))
+                        file.close()
+                        running = False
+                    game_loop = False
+                if self.scene != "":
+                    global scene_change
+                    scene_change = self.scene
         else:
             self.update_sprite(self.enabled,DARKBLUE)
-            
-class statusbar(UI):
-    def __init__(self,x,y,maxval=200,baseval=0,folder="defaultbar"):
-        self.transform = Transform2D(x,y,0)
-        self.sprite = pygame.sprite.Sprite()
-        self.root = folder
-        self.image = pygame.surface.Surface((273,96))
-        self.icon = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\Icon.png"),3)
-        self.bg = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\BG.png"),3)
-        self.bar = pygame.transform.scale_by(pygame.image.load("Sprites\\"+self.root+"\Bar.png"),3)
-        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))]) 
-        self.sprite.image = self.image
-        self.sprite.rect = self.sprite.image.get_rect()
-        self.val = baseval
-        self.max = maxval
-        self.dead = False
-    def update(self,dt):
-        if self.val < self.max:
-            self.val += 1
-        self.bar = pygame.transform.scale(self.bar,(math.ceil(180*(self.val/self.max)),54))
-        self.image.fill((164,111,43))
-        self.image.blits([(self.bg,(84,18)),(self.bar,(87,21)),(self.icon,(0,0))])
 
     #objects: list[GameObject]
 
@@ -1138,6 +1168,8 @@ def main(loading: str, lib: dict):
     global loaded_scene
     global scene_lib
     global scene_change
+    global running
+    global game_loop
     scene_lib = lib
     loaded_scene = scene_lib[loading]
     delta_time: float = 0
@@ -1148,11 +1180,17 @@ def main(loading: str, lib: dict):
     game_loop = True
     global mousedown
     mousedown = False
+    global Score
+    global PB
+    if Score > PB:
+        PB = math.ceil(Score)
+    Score = 0
 
     while game_loop:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 game_loop = False
+                running = False
             if event.type == MOUSEBUTTONDOWN:
                 mousedown = True
                 
@@ -1211,7 +1249,6 @@ def main(loading: str, lib: dict):
         screen.fill((0, 0, 0))
         delta_time = clock.tick(fps) / 1000
         mousedown = False
-
     pygame.quit()
 
 
