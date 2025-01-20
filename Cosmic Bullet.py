@@ -8,7 +8,7 @@ def stage_1() -> Scene:
     new_scene = Scene(
         Player(),
         wavedata(
-            Transform2D(0, 300, 0),
+            Transform2D(0, 200, 0),
             pygame.image.load("Sprites\Enemy.png"),
             [10, 180],
             [0, 0],
@@ -37,10 +37,10 @@ def stage_1() -> Scene:
         #BarWithText((255, 0, 0), (255, 255, 255), 100, 100, 300, 30, 550, 400, 450, 400, 72),
         bossSpawner(
         bossenemy(
-            Transform2D(0, 300, 0),
+            Transform2D(0, 200, 0),
             pygame.image.load("Sprites\Boss Enemy.png"),
             'victory',
-            [1000,1000],
+            [2000,2000],
             [60,60],
             [
                 [
@@ -68,17 +68,18 @@ def stage_1() -> Scene:
                         [0, 30, 0, 0],
                         [0, 0, 0, 141],
                     )
-                ]
+                ],
             ],
-            [[111,111,111,100],[111,111,111,100]]
+            [[25,25,25,100],[25,25,25,100]]
         ),
         1,
         1,
         ),
+        background(324,1296,"Sprites\Background.png",10),
         sidebar(-324,432),
         sidebar(768,432),
-        scrap_bar(-555,216),
-        energy_bar(-555,0),
+        scrap_bar(-555,108),
+        energy_bar(-555,-108),
         textobject(555,0,"Score: ",(255,255,0),72,(7,True)),
     )
     return new_scene
@@ -111,26 +112,29 @@ def stage_2() -> Scene:
                 )
             ],
             100,
-            [111,111,111,100]
+            [25,25,25,100]
         ),
         sidebar(-324,432),
         sidebar(768,432),
-        scrap_bar(-555,216),
-        energy_bar(-555,0)
+        scrap_bar(-555,108),
+        energy_bar(-555,-108)
     )
     return new_scene
 
 def main_menu() -> Scene:
     new_scene = Scene(
-        button(250,-200,"stage_1","Begin Game"),
-        button(-250,-200,"","Quit",True,True),
-        textobject(0,-50,"High Score: "+hs,(255,255,0))
+        background(768,432,"Sprites\MainBG.png"),
+        image(0,150,"Sprites\Logo.png"),
+        button(250,-250,"stage_1","Begin Game"),
+        button(-250,-250,"","Quit",True,True),
+        textobject(0,-120,"High Score: "+hs,(255,255,0))
         )
     return new_scene
 
 def death() -> Scene:
     new_scene = Scene(
-        textobject(0,0,"(this is what hell looks like)",(255,0,0)),
+        background(768,432,"Sprites\MainBG.png"),
+        textobject(0,0,"You Died!!!",(255,0,0)),
         button(250,-200,"","Return to Menu",True),
         button(-250,-200,"","Quit",True,True)
         )
@@ -138,6 +142,7 @@ def death() -> Scene:
 
 def victory() -> Scene:
     new_scene = Scene(
+        background(768,432,"Sprites\MainBG.png"),
         textobject(0,100,"You beat the boss!",(0,255,0)),
         textobject(0,0,"Your score was: 0",(255,255,0),72,(16,True)),
         button(250,-200,"","Return to Menu",True),

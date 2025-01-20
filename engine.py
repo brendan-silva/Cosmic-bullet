@@ -11,7 +11,7 @@ running = True
 Playermove = Vector2(0, 0)
 Playerlaseroff = True
 Playerlasercool = 0
-Playerhp=10
+Playerhp=3
 Playerscrap=1
 PlayerEXcharge = 50
 EXchargeON = False
@@ -551,7 +551,7 @@ class item(GameObject):
                         else:
                             PlayerEXcharge+=self.potency
                     else:
-                        Score+=self.potency*2**(Score/2000)
+                        Score+=self.potency*2**(Score/1000)
                 elif self.itemtype==1:
                     Playerscrap+=self.potency
                 else:
@@ -894,9 +894,11 @@ class background(GameObject):
         self.scroll = scroll
     def update(self,dt):
         if self.scroll > 0:
-            if self.transform.pos[1] <= 0:
-                self.transform.pos += (0,432)
-            self.transform.pos -= (0,self.scroll)
+            if self.transform.pos[1] <= -432 and True not in [isinstance(obj,bossenemy) for obj in loaded_scene.objects]:
+                self.transform.pos[1] += 1728
+            for i in range(self.scroll):
+                if (self.transform.pos[1] > 0 and True not in [isinstance(obj,bossenemy) for obj in loaded_scene.objects]) or (self.transform.pos[1] > -1296):
+                    self.transform.pos[1] -= 1
 
 class sidebar(GameObject):
     def __init__(self,x,y,path="Sprites\sidebar.png"):
@@ -906,7 +908,7 @@ class sidebar(GameObject):
         self.transform = Transform2D(x-self.sprite.rect.width/2,y-self.sprite.rect.height/2,0)
         self.dead = False
     def update(self,dt):
-        pass     
+        pass
                 
 class UI(GameObject):
     pass
@@ -918,8 +920,9 @@ class image(UI):
         self.sprite.rect = self.sprite.image.get_rect()
         self.transform = Transform2D(x,y,0)
         self.dead = False
+        self.rot = rot
     def update(self,dt):
-        self.transform.rotation = rot*(dt)
+        self.transform.rotation = self.rot*(dt)
         
 class textobject(UI):
     def __init__(self,x,y,text,colour,size=72,scoretxt=(0,False)):
@@ -1017,7 +1020,7 @@ class statusbar(UI):
 class scrap_bar(statusbar):
     def __init__(self,x,y):
         super().__init__(x,y,folder="Scrapbar")
-        self.max = 25 * Playerhp**2 + 75
+        self.max = 25 * Playerhp**2 + 150
         self.val = Playerscrap
         self.text = textobject(x,y,str(Playerhp),(255, 132, 0),90)
         self.text2 = textobject(x,y,str(Playerhp),(128, 66, 0),108)
@@ -1027,7 +1030,7 @@ class scrap_bar(statusbar):
     def update(self,dt):
         global Playerhp
         global Playerscrap
-        self.max = 25 * Playerhp**2 + 75
+        self.max = 25 * Playerhp**2 + 150
         for i in range(5):
             if self.val < Playerscrap:
                 self.val += 1
